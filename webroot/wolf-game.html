@@ -86,6 +86,11 @@
           <div class="pixel-text title">Around the Bonfire</div>
           <div class="pixel-text subtitle">Discuss the clues</div>
           
+          <div class="bonfire-timer">
+            <div class="pixel-text small">Time to discuss:</div>
+            <div id="bonfire-timer-display" class="pixel-text medium">60s</div>
+          </div>
+          
           <div class="bonfire-scene">
             <div class="bonfire">🔥</div>
             <div class="players-circle">
@@ -151,7 +156,7 @@
             </div>
           </div>
           
-          <button id="btn-continue-to-accusations" class="pixel-btn primary">
+          <button id="btn-continue-to-accusations" class="pixel-btn primary accusations">
             MAKE ACCUSATIONS
           </button>
         </div>
@@ -216,8 +221,8 @@
           <div class="pixel-text subtitle">Who gets eliminated?</div>
           
           <div class="voting-timer">
-            <div class="pixel-text small">Time remaining:</div>
-            <div id="timer-display" class="pixel-text medium">30s</div>
+            <div class="pixel-text small">Vote or be eliminated:</div>
+            <div id="timer-display" class="pixel-text medium">25s</div>
           </div>
           
           <div class="voting-options">
@@ -265,6 +270,9 @@
               <div class="player-avatar">👩</div>
               <div class="pixel-text small">Alice</div>
               <div class="role-reveal-result" id="eliminated-role">Was a SHEEP</div>
+            </div>
+            <div class="elimination-reason hidden" id="elimination-reason">
+              <div class="pixel-text small" id="elimination-reason-text">Eliminated by timer (failed to vote)</div>
             </div>
           </div>
           
