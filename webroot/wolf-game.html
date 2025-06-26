@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta charset="UTF-8" />
+    <title>Who is the Wolf?</title>
+    <link rel="stylesheet" href="wolf-game.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="loading" class="screen">
+        <div class="loading-spinner"></div>
+        <h2>Starting Wolf Game...</h2>
+      </div>
+      
+      <!-- Game Screen - Single unified screen -->
+      <div id="game-screen" class="screen hidden">
+        <div class="game-header">
+          <h1>🐺 Who is the Wolf?</h1>
+          <div class="round-info">
+            <span id="round-number">Round 1</span>
+            <span id="user-role" class="role-badge">🐑 Sheep</span>
+          </div>
+        </div>
+        
+        <!-- Word Assignment -->
+        <div id="word-section" class="game-section">
+          <div class="word-display">
+            <p>Your word is:</p>
+            <span id="assigned-word" class="word">Apple</span>
+          </div>
+        </div>
+        
+        <!-- Clues Section -->
+        <div id="clues-section" class="game-section">
+          <h3 id="clues-instruction">Give 3 clues about your word:</h3>
+          <div class="clues-input">
+            <input type="text" id="clue1" placeholder="Clue 1" maxlength="50">
+            <input type="text" id="clue2" placeholder="Clue 2" maxlength="50">
+            <input type="text" id="clue3" placeholder="Clue 3" maxlength="50">
+          </div>
+          <button id="btn-submit-clues" class="primary-btn">
+            Submit Clues
+          </button>
+        </div>
+        
+        <!-- Computer Players Status -->
+        <div id="computer-status" class="game-section hidden">
+          <h3>Computer Players:</h3>
+          <div id="computer-players-list"></div>
+          <p class="status-text">Computer players are generating clues...</p>
+        </div>
+        
+        <!-- All Clues Display -->
+        <div id="all-clues-section" class="game-section hidden">
+          <h3>All Player Clues:</h3>
+          <div id="clues-container"></div>
+        </div>
+        
+        <!-- Voting Section -->
+        <div id="voting-section" class="game-section hidden">
+          <h3>🗳️ Vote for the Wolf:</h3>
+          <div id="voting-options"></div>
+          <button id="btn-submit-vote" class="primary-btn" disabled>
+            Submit Vote
+          </button>
+          <div id="voting-timer" class="timer">Time left: 30s</div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="results-section" class="game-section hidden">
+          <h2 id="results-title">🎉 Round Results</h2>
+          
+          <div class="voting-results">
+            <h3>Voting Results:</h3>
+            <div id="votes-container"></div>
+          </div>
+          
+          <div class="elimination-result">
+            <div id="eliminated-player"></div>
+          </div>
+          
+          <div class="game-outcome">
+            <div id="game-outcome-text"></div>
+          </div>
+          
+          <div class="leaderboard">
+            <h3>🏆 Leaderboard</h3>
+            <div id="leaderboard-container"></div>
+          </div>
+          
+          <div class="results-actions">
+            <button id="btn-next-round" class="primary-btn hidden">
+              Next Round
+            </button>
+            <button id="btn-new-game" class="secondary-btn">
+              New Game
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="toast-container"></div>
+    
+    <script type="application/javascript" src="wolf-game.js"></script>
+  </body>
+</html> 

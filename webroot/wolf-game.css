@@ -1,0 +1,487 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+}
+
+#app {
+  width: 100%;
+  max-width: 800px;
+  min-height: 600px;
+  margin: 20px;
+}
+
+/* Screen management */
+.screen {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  min-height: 500px;
+  transition: all 0.3s ease;
+}
+
+.screen.hidden {
+  display: none;
+}
+
+/* Loading Screen */
+#loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Game Header */
+.game-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #eee;
+}
+
+.game-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.round-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+#round-number {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #666;
+}
+
+.role-badge {
+  padding: 8px 16px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.role-badge.sheep {
+  background: linear-gradient(135deg, #4CAF50, #8BC34A);
+  color: white;
+}
+
+.role-badge.wolf {
+  background: linear-gradient(135deg, #FF5722, #E91E63);
+  color: white;
+}
+
+/* Game Sections */
+.game-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.game-section h3 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+/* Word Display */
+.word-display {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.word-display p {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.word {
+  display: inline-block;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 15px 30px;
+  border-radius: 15px;
+  border: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+/* Clues Input */
+.clues-input {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.clues-input input {
+  padding: 15px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.clues-input input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Computer Players */
+.computer-player {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.player-name {
+  font-weight: bold;
+  color: #333;
+}
+
+.player-status {
+  color: #4CAF50;
+  font-size: 0.9rem;
+}
+
+.status-text {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  margin-top: 15px;
+}
+
+/* All Clues Display */
+.player-clues {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.player-clues h4 {
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.clues-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clue {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Voting Section */
+.voting-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.vote-option {
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.vote-option:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
+  transform: translateY(-2px);
+}
+
+.vote-option.selected {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-color: #667eea;
+}
+
+.timer {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #FF5722;
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(255, 87, 34, 0.1);
+  border-radius: 8px;
+}
+
+/* Results Section */
+.vote-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.vote-count {
+  font-weight: bold;
+  color: #667eea;
+}
+
+.elimination-result {
+  text-align: center;
+  margin: 25px 0;
+  padding: 20px;
+  background: rgba(255, 87, 34, 0.1);
+  border-radius: 15px;
+  border: 2px solid rgba(255, 87, 34, 0.3);
+}
+
+.elimination-result h3 {
+  color: #FF5722;
+  font-size: 1.4rem;
+}
+
+.game-outcome {
+  text-align: center;
+  margin: 25px 0;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.game-outcome h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+/* Leaderboard */
+.leaderboard {
+  margin-top: 25px;
+  padding: 20px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 15px;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard h3 {
+  text-align: center;
+  color: #FFA000;
+  margin-bottom: 15px;
+}
+
+.leaderboard-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.rank {
+  font-weight: bold;
+  color: #FFA000;
+  min-width: 40px;
+}
+
+.username {
+  flex: 1;
+  margin-left: 15px;
+  font-weight: 500;
+}
+
+.score {
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+/* Buttons */
+.primary-btn, .secondary-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+  text-decoration: none;
+  min-width: 120px;
+  text-align: center;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.secondary-btn:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.results-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+/* Toast Notifications */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.toast {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  transform: translateX(400px);
+  transition: transform 0.3s ease;
+  max-width: 300px;
+}
+
+.toast.show {
+  transform: translateX(0);
+}
+
+.toast.error {
+  background: rgba(244, 67, 54, 0.9);
+}
+
+.toast.success {
+  background: rgba(76, 175, 80, 0.9);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  #app {
+    margin: 10px;
+  }
+  
+  .screen {
+    padding: 20px;
+  }
+  
+  .game-header h1 {
+    font-size: 2rem;
+  }
+  
+  .round-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .voting-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .results-actions {
+    flex-direction: column;
+  }
+  
+  .clues-input {
+    gap: 10px;
+  }
+  
+  .vote-result, .leaderboard-entry {
+    padding: 10px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .word {
+    font-size: 1.5rem;
+    padding: 10px 20px;
+  }
+  
+  .clues-list {
+    justify-content: center;
+  }
+  
+  .clue {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+} 
