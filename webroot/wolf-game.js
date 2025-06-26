@@ -70,6 +70,9 @@ class WolfGameApp {
     this.votes = {};
     this.selectedAccusation = null;
     this.votingTimer = null;
+    this.cluesTimer = null;
+    this.bonfireTimer = null;
+    this.accusationsTimer = null;
     this.totalScore = 0;
     this.roundScore = 0;
     this.currentWordPair = null;
@@ -162,7 +165,14 @@ class WolfGameApp {
     this.elements.btnSubmitClues.addEventListener('click', () => this.submitClues());
     
     // Bonfire screen
-    this.elements.btnContinueToAccusations.addEventListener('click', () => this.showAccusationsScreen());
+    this.elements.btnContinueToAccusations.addEventListener('click', () => {
+      // Clear bonfire timer if user clicks button
+      if (this.bonfireTimer) {
+        clearInterval(this.bonfireTimer);
+        this.bonfireTimer = null;
+      }
+      this.showAccusationsScreen();
+    });
     
     // Accusations screen
     document.querySelectorAll('.player-btn').forEach(btn => {
@@ -225,6 +235,7 @@ class WolfGameApp {
     // Hide loading, assign role and word
     this.assignRoleAndWord();
     this.createComputerPlayers();
+    
     this.showRoleScreen();
   }
   
@@ -261,6 +272,7 @@ class WolfGameApp {
   }
   
   showRoleScreen() {
+    this.updateBackground('role');
     this.hideAllScreens();
     this.elements.roleScreen.classList.remove('hidden');
     
@@ -279,6 +291,7 @@ class WolfGameApp {
   }
   
   showCluesScreen() {
+    this.updateBackground('clues');
     this.hideAllScreens();
     this.elements.cluesScreen.classList.remove('hidden');
     
@@ -289,6 +302,12 @@ class WolfGameApp {
     this.elements.clue1.value = '';
     this.elements.clue2.value = '';
     this.elements.clue3.value = '';
+    
+    // Show thinking status instead of timer
+    this.elements.computerThinking.classList.add('hidden');
+    
+    // Hide timer initially
+    this.elements.cluesTimer.classList.add('hidden');
   }
   
   async submitClues() {
@@ -304,7 +323,7 @@ class WolfGameApp {
     // Store user clues
     this.userClues = [clue1, clue2, clue3];
     
-    // Show thinking status
+    // Show thinking status immediately
     this.elements.computerThinking.classList.remove('hidden');
     this.elements.btnSubmitClues.disabled = true;
     
@@ -335,6 +354,7 @@ class WolfGameApp {
   }
   
   showBonfireScreen() {
+    this.updateBackground('bonfire');
     this.hideAllScreens();
     this.elements.bonfireScreen.classList.remove('hidden');
     
@@ -361,14 +381,20 @@ class WolfGameApp {
         }
       }
     });
+    
+    // Start bonfire timer - auto-advance to accusations after 25 seconds
+    this.startBonfireTimer(25);
   }
   
   showAccusationsScreen() {
+    this.updateBackground('accusations');
     this.hideAllScreens();
     this.elements.accusationsScreen.classList.remove('hidden');
     
-    // Reset accusations
-    this.accusations = [];
+    // Generate computer accusations first (so user can see everyone's thoughts)
+    this.generateComputerAccusations();
+    
+    // Reset user accusation state
     this.selectedAccusation = null;
     this.elements.accusationInput.classList.add('hidden');
     this.elements.btnContinueToVoting.classList.add('hidden');
@@ -384,7 +410,11 @@ class WolfGameApp {
       }
     });
     
+    // Update accusations list to show computer accusations
     this.updateAccusationsList();
+    
+    // Start accusations timer - user must make accusation within this time or get eliminated
+    this.startAccusationsTimer(35);
   }
   
   selectPlayerForAccusation(playerId) {
@@ -413,15 +443,22 @@ class WolfGameApp {
       return;
     }
     
+    // Clear accusations timer
+    if (this.accusationsTimer) {
+      clearInterval(this.accusationsTimer);
+      this.accusationsTimer = null;
+    }
+    
+    // Remove timer display
+    const timerDisplay = document.getElementById('accusations-timer-display');
+    if (timerDisplay) timerDisplay.remove();
+    
     const playerName = this.computerPlayers.find(p => p.id === this.selectedAccusation)?.name;
     this.accusations.push({
       accuser: this.currentUser?.username || 'You',
       accused: playerName,
       reason: reason
     });
-    
-    // Generate computer accusations (only from alive players)
-    this.generateComputerAccusations();
     
     // Update display
     this.updateAccusationsList();
@@ -432,6 +469,9 @@ class WolfGameApp {
   }
   
   generateComputerAccusations() {
+    // Only generate if we haven't already
+    if (this.accusations.length > 0) return;
+    
     const reasons = [
       'clues seem off',
       'too vague',
@@ -477,6 +517,7 @@ class WolfGameApp {
   }
   
   showVotingScreen() {
+    this.updateBackground('voting');
     this.hideAllScreens();
     this.elements.votingScreen.classList.remove('hidden');
     
@@ -492,14 +533,17 @@ class WolfGameApp {
         btn.style.display = 'none';
       } else {
         btn.style.display = 'block';
+        // Hide vote counts initially
+        const voteCount = btn.querySelector('.vote-count');
+        if (voteCount) voteCount.style.display = 'none';
       }
     });
     
-    // Start voting timer
-    this.startVotingTimer(30);
+    // Generate computer votes immediately
+    this.generateComputerVotes();
     
-    // Generate computer votes after delay
-    setTimeout(() => this.generateComputerVotes(), 3000);
+    // Start voting timer - user must vote within this time or get eliminated
+    this.startVotingTimer(25);
   }
   
   startVotingTimer(seconds) {
@@ -512,7 +556,8 @@ class WolfGameApp {
       
       if (timeLeft <= 0) {
         clearInterval(this.votingTimer);
-        this.processVotingResults();
+        // User didn't vote in time - eliminate them
+        this.eliminateUser();
       }
     }, 1000);
   }
@@ -536,12 +581,11 @@ class WolfGameApp {
     this.elements.votedPlayer.textContent = playerName;
     this.elements.yourVote.classList.remove('hidden');
     
-    // Check if all votes are in
-    const aliveCount = this.computerPlayers.filter(p => p.alive).length + (this.alivePlayers.includes('user') ? 1 : 0);
-    if (Object.keys(this.votes).length >= aliveCount) {
-      clearInterval(this.votingTimer);
-      this.processVotingResults();
-    }
+    // User voted - clear timer and show vote counts
+    clearInterval(this.votingTimer);
+    
+    // Show all vote counts for 3 seconds, then show results
+    this.showVoteCountsAndResults();
   }
   
   generateComputerVotes() {
@@ -560,6 +604,33 @@ class WolfGameApp {
     this.updateVoteCounts();
   }
   
+  showVoteCountsAndResults() {
+    // Calculate vote counts
+    const voteCounts = {};
+    Object.values(this.votes).forEach(vote => {
+      voteCounts[vote] = (voteCounts[vote] || 0) + 1;
+    });
+    
+    // Show all vote counts
+    this.computerPlayers.forEach(player => {
+      if (!player.alive) return;
+      const voteElement = document.getElementById(`votes-${player.id}`);
+      if (voteElement) {
+        const count = voteCounts[player.id] || 0;
+        voteElement.textContent = `${count} votes`;
+        voteElement.style.display = 'block'; // Make vote counts visible
+      }
+    });
+    
+    // Update timer display to show vote results
+    this.elements.timerDisplay.textContent = 'Vote Results!';
+    
+    // Show results after 3 seconds
+    setTimeout(() => {
+      this.processVotingResults();
+    }, 3000);
+  }
+
   updateVoteCounts() {
     const voteCounts = {};
     Object.values(this.votes).forEach(vote => {
@@ -577,6 +648,163 @@ class WolfGameApp {
     });
   }
   
+  startCluesTimer(seconds) {
+    let timeLeft = seconds;
+    // Create timer display if not exists in clues screen
+    let timerDisplay = document.getElementById('clues-timer-display');
+    if (!timerDisplay) {
+      timerDisplay = document.createElement('div');
+      timerDisplay.id = 'clues-timer-display';
+      timerDisplay.className = 'voting-timer';
+      timerDisplay.innerHTML = `
+        <div class="pixel-text small">Submit clues or be eliminated:</div>
+        <div class="pixel-text medium">${timeLeft}s</div>
+      `;
+      this.elements.cluesScreen.querySelector('.content-container').insertBefore(
+        timerDisplay, 
+        this.elements.cluesScreen.querySelector('.clues-form')
+      );
+    }
+    
+    const timerText = timerDisplay.querySelector('.pixel-text.medium');
+    timerText.textContent = `${timeLeft}s`;
+    
+    this.cluesTimer = setInterval(() => {
+      timeLeft--;
+      timerText.textContent = `${timeLeft}s`;
+      
+      if (timeLeft <= 0) {
+        clearInterval(this.cluesTimer);
+        // User didn't submit clues in time - eliminate them
+        this.eliminateUser();
+      }
+    }, 1000);
+  }
+
+  startBonfireTimer(seconds) {
+    let timeLeft = seconds;
+    // Create timer display if not exists in bonfire screen
+    let timerDisplay = document.getElementById('bonfire-timer-display');
+    if (!timerDisplay) {
+      timerDisplay = document.createElement('div');
+      timerDisplay.id = 'bonfire-timer-display';
+      timerDisplay.className = 'voting-timer';
+      timerDisplay.innerHTML = `
+        <div class="pixel-text small">Auto-advance in:</div>
+        <div class="pixel-text medium">${timeLeft}s</div>
+      `;
+      this.elements.bonfireScreen.querySelector('.content-container').appendChild(timerDisplay);
+    }
+    
+    const timerText = timerDisplay.querySelector('.pixel-text.medium');
+    timerText.textContent = `${timeLeft}s`;
+    
+    this.bonfireTimer = setInterval(() => {
+      timeLeft--;
+      timerText.textContent = `${timeLeft}s`;
+      
+      if (timeLeft <= 0) {
+        clearInterval(this.bonfireTimer);
+        // Time's up - automatically proceed to accusations
+        this.showAccusationsScreen();
+      }
+    }, 1000);
+  }
+
+  startAccusationsTimer(seconds) {
+    let timeLeft = seconds;
+    // Create timer display if not exists
+    let timerDisplay = document.getElementById('accusations-timer-display');
+    if (!timerDisplay) {
+      timerDisplay = document.createElement('div');
+      timerDisplay.id = 'accusations-timer-display';
+      timerDisplay.className = 'accusations-timer';
+      timerDisplay.innerHTML = `
+        <div class="pixel-text tiny">Time: ${timeLeft}s</div>
+      `;
+      document.body.appendChild(timerDisplay);
+    }
+    
+    const timerText = timerDisplay.querySelector('.pixel-text.tiny');
+    timerText.textContent = `Time: ${timeLeft}s`;
+    
+    this.accusationsTimer = setInterval(() => {
+      timeLeft--;
+      timerText.textContent = `Time: ${timeLeft}s`;
+      
+      if (timeLeft <= 0) {
+        clearInterval(this.accusationsTimer);
+        // Remove timer display
+        if (timerDisplay) timerDisplay.remove();
+        // User didn't make accusation in time - eliminate them
+        this.eliminateUser();
+      }
+    }, 1000);
+  }
+
+  updateBackground(screenType = null) {
+    // Calculate total alive players (user + computer players)
+    let aliveCount = 0;
+    
+    // Count user if alive
+    if (this.alivePlayers.includes('user') && !this.userEliminated) {
+      aliveCount++;
+    }
+    
+    // Count alive computer players
+    aliveCount += this.computerPlayers.filter(p => p.alive).length;
+    
+    // Set background based on screen type and alive count
+    let backgroundImage;
+    
+    // Use landscape for role and clues screens
+    if (screenType === 'landscape' || screenType === 'role' || screenType === 'clues') {
+      backgroundImage = 'nightlandscape.png';
+    } 
+    // Use bonfire backgrounds for accusations, voting, bonfire, and results
+    else if (screenType === 'bonfire' || screenType === 'accusations' || screenType === 'voting' || screenType === 'results') {
+      if (this.gameOver || aliveCount === 0) {
+        backgroundImage = 'bonfire0.png'; // Game over
+      } else if (aliveCount === 3) {
+        backgroundImage = 'bonfire3.png';
+      } else if (aliveCount === 4) {
+        backgroundImage = 'bonfire4.png';
+      } else if (aliveCount === 5) {
+        backgroundImage = 'bonfire5.png';
+      } else {
+        backgroundImage = 'bonfire6.png'; // 6 or more (start of game)
+      }
+    }
+    // Default bonfire logic for other cases
+    else {
+      if (this.gameOver || aliveCount === 0) {
+        backgroundImage = 'bonfire0.png'; // Game over
+      } else if (aliveCount === 3) {
+        backgroundImage = 'bonfire3.png';
+      } else if (aliveCount === 4) {
+        backgroundImage = 'bonfire4.png';
+      } else if (aliveCount === 5) {
+        backgroundImage = 'bonfire5.png';
+      } else {
+        backgroundImage = 'bonfire6.png'; // 6 or more (start of game)
+      }
+    }
+    
+    // Apply background to body
+    document.body.style.backgroundImage = `url('${backgroundImage}')`;
+  }
+
+  eliminateUser() {
+    // User didn't complete action in time - they get eliminated
+    this.userEliminated = true;
+    this.alivePlayers = this.alivePlayers.filter(id => id !== 'user');
+    
+    // Update background after user elimination
+    this.updateBackground();
+    
+    this.showResultsScreen('user');
+  }
+
   processVotingResults() {
     // Count votes
     const voteCounts = {};
@@ -596,20 +824,36 @@ class WolfGameApp {
       this.alivePlayers = this.alivePlayers.filter(id => id !== eliminatedId);
     }
     
+    // Update background after elimination
+    this.updateBackground();
+    
     this.showResultsScreen(eliminatedId);
   }
   
   showResultsScreen(eliminatedId) {
+    this.updateBackground('results');
     this.hideAllScreens();
     this.elements.resultsScreen.classList.remove('hidden');
     
-    const eliminatedPlayer = this.computerPlayers.find(p => p.id === eliminatedId);
-    const wasWolf = eliminatedPlayer?.isWolf || false;
+    let eliminatedPlayer, wasWolf, eliminatedName, eliminatedAvatar;
+    
+    if (eliminatedId === 'user') {
+      // User was eliminated (didn't vote in time)
+      eliminatedName = this.currentUser?.username || 'You';
+      eliminatedAvatar = '👤';
+      wasWolf = this.userRole === 'wolf';
+    } else {
+      // Computer player was eliminated
+      eliminatedPlayer = this.computerPlayers.find(p => p.id === eliminatedId);
+      eliminatedName = eliminatedPlayer?.name;
+      eliminatedAvatar = eliminatedPlayer?.avatar;
+      wasWolf = eliminatedPlayer?.isWolf || false;
+    }
     
     // Update elimination display
-    this.elements.eliminatedText.textContent = `${eliminatedPlayer?.name} has been eliminated!`;
-    this.elements.eliminatedPlayer.querySelector('.player-avatar').textContent = eliminatedPlayer?.avatar;
-    this.elements.eliminatedPlayer.querySelector('.pixel-text').textContent = eliminatedPlayer?.name;
+    this.elements.eliminatedText.textContent = `${eliminatedName} has been eliminated!`;
+    this.elements.eliminatedPlayer.querySelector('.player-avatar').textContent = eliminatedAvatar;
+    this.elements.eliminatedPlayer.querySelector('.pixel-text').textContent = eliminatedName;
     this.elements.eliminatedRole.textContent = wasWolf ? 'Was the WOLF' : 'Was a SHEEP';
     this.elements.eliminatedRole.style.background = wasWolf ? '#FF4444' : '#44FF44';
     
@@ -652,6 +896,13 @@ class WolfGameApp {
         showNextRound = true;
         this.roundScore += POINTS.SURVIVAL; // Survival bonus
       }
+    }
+    
+    // Update background - show game over background if game ended
+    if (this.gameOver) {
+      document.body.style.backgroundImage = "url('bonfire0.png')";
+    } else {
+      this.updateBackground('results');
     }
     
     // Update outcome display
@@ -736,9 +987,22 @@ class WolfGameApp {
     this.selectedAccusation = null;
     this.roundScore = 0;
     
+    // Clear all timers
     if (this.votingTimer) {
       clearInterval(this.votingTimer);
       this.votingTimer = null;
+    }
+    if (this.cluesTimer) {
+      clearInterval(this.cluesTimer);
+      this.cluesTimer = null;
+    }
+    if (this.bonfireTimer) {
+      clearInterval(this.bonfireTimer);
+      this.bonfireTimer = null;
+    }
+    if (this.accusationsTimer) {
+      clearInterval(this.accusationsTimer);
+      this.accusationsTimer = null;
     }
     
     // Clear form inputs
@@ -771,6 +1035,22 @@ class WolfGameApp {
     // Show all player spots
     document.querySelectorAll('.player-spot').forEach(spot => {
       spot.style.display = 'block';
+    });
+    
+    // Clean up timer displays
+    const cluesTimerDisplay = document.getElementById('clues-timer-display');
+    if (cluesTimerDisplay) cluesTimerDisplay.remove();
+    
+    const bonfireTimerDisplay = document.getElementById('bonfire-timer-display');
+    if (bonfireTimerDisplay) bonfireTimerDisplay.remove();
+    
+    const accusationsTimerDisplay = document.getElementById('accusations-timer-display');
+    if (accusationsTimerDisplay) accusationsTimerDisplay.remove();
+    
+    // Reset vote count displays
+    document.querySelectorAll('.vote-count').forEach(voteCount => {
+      voteCount.style.display = 'block';
+      voteCount.textContent = '0 votes';
     });
   }
   
