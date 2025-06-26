@@ -1,7 +1,5 @@
 /** @typedef {import('../src/types.ts').WolfDevvitSystemMessage} WolfDevvitSystemMessage */
 /** @typedef {import('../src/types.ts').WolfWebViewMessage} WolfWebViewMessage */
-/** @typedef {import('../src/types.ts').WolfGameData} WolfGameData */
-/** @typedef {import('../src/types.ts').WolfPlayer} WolfPlayer */
 
 // Word pairs for the game - wolf gets one word, sheep get the other
 const WORD_PAIRS = [
@@ -17,31 +15,54 @@ const WORD_PAIRS = [
   { sheep: 'Hot', wolf: 'Cold' },
 ];
 
-// Computer player names
-const COMPUTER_NAMES = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eva'];
+// Computer player names and avatars
+const COMPUTER_PLAYERS = [
+  { name: 'Alice', avatar: '👩', id: 'alice' },
+  { name: 'Bob', avatar: '👨', id: 'bob' },
+  { name: 'Charlie', avatar: '🧑', id: 'charlie' },
+  { name: 'Diana', avatar: '👩‍🦰', id: 'diana' },
+  { name: 'Eva', avatar: '👩‍🦱', id: 'eva' },
+];
 
-// Possible clues for computer players (will be randomized)
+// Clue templates for computer players
 const CLUE_TEMPLATES = {
-  Apple: ['red fruit', 'grows on trees', 'good for health'],
-  Orange: ['citrus fruit', 'bright color', 'vitamin C'],
-  Cat: ['furry pet', 'says meow', 'independent'],
-  Dog: ['loyal pet', 'man\'s best friend', 'barks'],
-  Coffee: ['morning drink', 'has caffeine', 'brown liquid'],
-  Tea: ['hot beverage', 'comes in bags', 'relaxing'],
-  // ... more clue templates can be added
+  Apple: ['red', 'fruit', 'sweet', 'tree', 'healthy', 'crunchy', 'juice', 'snack'],
+  Orange: ['citrus', 'vitamin', 'round', 'peel', 'juice', 'bright', 'segments', 'tangy'],
+  Cat: ['furry', 'meow', 'pet', 'whiskers', 'purr', 'independent', 'feline', 'cute'],
+  Dog: ['loyal', 'bark', 'pet', 'tail', 'fetch', 'friend', 'canine', 'walk'],
+  Coffee: ['drink', 'caffeine', 'morning', 'hot', 'beans', 'energy', 'brown', 'bitter'],
+  Tea: ['drink', 'leaves', 'hot', 'calm', 'ceremony', 'green', 'steep', 'relaxing'],
+  Summer: ['hot', 'sunny', 'vacation', 'beach', 'warm', 'long', 'bright', 'fun'],
+  Winter: ['cold', 'snow', 'ice', 'coat', 'dark', 'freeze', 'season', 'chill'],
+  Book: ['read', 'pages', 'story', 'words', 'paper', 'knowledge', 'library', 'author'],
+  Movie: ['watch', 'screen', 'actors', 'cinema', 'popcorn', 'director', 'film', 'entertainment'],
+  Beach: ['sand', 'waves', 'ocean', 'sun', 'vacation', 'swim', 'shore', 'relaxing'],
+  Mountain: ['high', 'climb', 'peak', 'rocks', 'view', 'hiking', 'tall', 'nature'],
+  Pizza: ['cheese', 'dough', 'slice', 'oven', 'italian', 'round', 'toppings', 'delicious'],
+  Burger: ['meat', 'bun', 'grill', 'fast', 'american', 'fries', 'sauce', 'tasty'],
+  Car: ['drive', 'wheels', 'engine', 'road', 'transport', 'fuel', 'speed', 'vehicle'],
+  Bike: ['pedal', 'wheels', 'chain', 'exercise', 'eco', 'balance', 'ride', 'cycle'],
+  Day: ['light', 'sun', 'bright', 'work', 'active', 'awake', 'morning', 'noon'],
+  Night: ['dark', 'moon', 'stars', 'sleep', 'quiet', 'rest', 'evening', 'peaceful'],
+  Hot: ['warm', 'heat', 'fire', 'summer', 'sweat', 'temperature', 'burning', 'fever'],
+  Cold: ['cool', 'ice', 'winter', 'freeze', 'chill', 'temperature', 'shiver', 'snow'],
 };
 
 class WolfGameApp {
   constructor() {
     this.currentUser = null;
-    this.gameState = 'loading'; // loading, clues, voting, results
+    this.gameState = 'loading'; // loading, role, clues, bonfire, accusations, voting, results
     this.roundNumber = 1;
     this.userRole = null; // 'sheep' or 'wolf'
     this.userWord = null;
+    this.userClues = [];
     this.computerPlayers = [];
-    this.selectedVoteTarget = null;
+    this.accusations = [];
+    this.votes = {};
+    this.selectedAccusation = null;
     this.votingTimer = null;
     this.scores = {}; // userId -> score
+    this.currentWordPair = null;
     
     // Initialize DOM elements
     this.initializeElements();
@@ -52,65 +73,101 @@ class WolfGameApp {
     // Wait for Devvit messages
     addEventListener('message', this.onDevvitMessage.bind(this));
     
-    // Signal that the web view is ready
+    // Signal that the web view is ready and auto-start
     addEventListener('load', () => {
       this.postToDevvit({ type: 'webViewReady' });
+      // Auto-start after a brief delay
+      setTimeout(() => this.startGame(), 1000);
     });
   }
   
   initializeElements() {
-    // Main elements
     this.elements = {
-      loading: document.getElementById('loading'),
-      gameScreen: document.getElementById('game-screen'),
-      roundNumber: document.getElementById('round-number'),
-      userRole: document.getElementById('user-role'),
-      assignedWord: document.getElementById('assigned-word'),
+      // Screens
+      loadingScreen: document.getElementById('loading-screen'),
+      roleScreen: document.getElementById('role-screen'),
+      cluesScreen: document.getElementById('clues-screen'),
+      bonfireScreen: document.getElementById('bonfire-screen'),
+      accusationsScreen: document.getElementById('accusations-screen'),
+      votingScreen: document.getElementById('voting-screen'),
+      resultsScreen: document.getElementById('results-screen'),
       
-      // Sections
-      wordSection: document.getElementById('word-section'),
-      cluesSection: document.getElementById('clues-section'),
-      computerStatus: document.getElementById('computer-status'),
-      allCluesSection: document.getElementById('all-clues-section'),
-      votingSection: document.getElementById('voting-section'),
-      resultsSection: document.getElementById('results-section'),
+      // Role screen elements
+      roleDisplay: document.getElementById('role-display'),
+      wordDisplay: document.getElementById('word-display'),
+      roleInstruction: document.getElementById('role-instruction'),
       
-      // Input elements
+      // Clues screen elements
+      cluesWordDisplay: document.getElementById('clues-word-display'),
       clue1: document.getElementById('clue1'),
       clue2: document.getElementById('clue2'),
       clue3: document.getElementById('clue3'),
+      computerThinking: document.getElementById('computer-thinking'),
       
-      // Containers
-      computerPlayersList: document.getElementById('computer-players-list'),
-      cluesContainer: document.getElementById('clues-container'),
-      votingOptions: document.getElementById('voting-options'),
-      votesContainer: document.getElementById('votes-container'),
+      // Bonfire screen elements
+      userName: document.getElementById('user-name'),
+      userClue1: document.getElementById('user-clue1'),
+      userClue2: document.getElementById('user-clue2'),
+      userClue3: document.getElementById('user-clue3'),
+      
+      // Accusations screen elements
+      accusationInput: document.getElementById('accusation-input'),
+      accusedName: document.getElementById('accused-name'),
+      accusationReason: document.getElementById('accusation-reason'),
+      accusationsList: document.getElementById('accusations-list'),
+      
+      // Voting screen elements
+      timerDisplay: document.getElementById('timer-display'),
+      yourVote: document.getElementById('your-vote'),
+      votedPlayer: document.getElementById('voted-player'),
+      
+      // Results screen elements
+      resultsTitle: document.getElementById('results-title'),
+      eliminatedText: document.getElementById('eliminated-text'),
       eliminatedPlayer: document.getElementById('eliminated-player'),
-      gameOutcomeText: document.getElementById('game-outcome-text'),
-      leaderboardContainer: document.getElementById('leaderboard-container'),
+      eliminatedRole: document.getElementById('eliminated-role'),
+      outcomeText: document.getElementById('outcome-text'),
+      outcomeDescription: document.getElementById('outcome-description'),
+      userScore: document.getElementById('user-score'),
       
       // Buttons
-      submitClues: document.getElementById('btn-submit-clues'),
-      submitVote: document.getElementById('btn-submit-vote'),
-      nextRound: document.getElementById('btn-next-round'),
-      newGame: document.getElementById('btn-new-game'),
-      
-      // Other
-      votingTimer: document.getElementById('voting-timer'),
-      resultsTitle: document.getElementById('results-title')
+      btnContinueToClues: document.getElementById('btn-continue-to-clues'),
+      btnSubmitClues: document.getElementById('btn-submit-clues'),
+      btnContinueToAccusations: document.getElementById('btn-continue-to-accusations'),
+      btnSubmitAccusation: document.getElementById('btn-submit-accusation'),
+      btnContinueToVoting: document.getElementById('btn-continue-to-voting'),
+      btnNextRound: document.getElementById('btn-next-round'),
+      btnNewGame: document.getElementById('btn-new-game'),
     };
   }
   
   setupEventListeners() {
-    this.elements.submitClues.addEventListener('click', () => this.submitClues());
-    this.elements.submitVote.addEventListener('click', () => this.submitVote());
-    this.elements.nextRound.addEventListener('click', () => this.nextRound());
-    this.elements.newGame.addEventListener('click', () => this.newGame());
+    // Role screen
+    this.elements.btnContinueToClues.addEventListener('click', () => this.showCluesScreen());
+    
+    // Clues screen
+    this.elements.btnSubmitClues.addEventListener('click', () => this.submitClues());
+    
+    // Bonfire screen
+    this.elements.btnContinueToAccusations.addEventListener('click', () => this.showAccusationsScreen());
+    
+    // Accusations screen
+    document.querySelectorAll('.player-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.selectPlayerForAccusation(e.target.closest('.player-btn').dataset.player));
+    });
+    this.elements.btnSubmitAccusation.addEventListener('click', () => this.submitAccusation());
+    this.elements.btnContinueToVoting.addEventListener('click', () => this.showVotingScreen());
+    
+    // Voting screen
+    document.querySelectorAll('.vote-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.submitVote(e.target.closest('.vote-btn').dataset.player));
+    });
+    
+    // Results screen
+    this.elements.btnNextRound.addEventListener('click', () => this.nextRound());
+    this.elements.btnNewGame.addEventListener('click', () => this.newGame());
   }
   
-  /**
-   * Handle messages from Devvit
-   */
   onDevvitMessage(event) {
     if (event.data.type !== 'devvit-message') return;
     
@@ -121,7 +178,7 @@ class WolfGameApp {
         this.handleInitialData(message.data);
         break;
       case 'gameCreated':
-        this.startGame();
+        this.showToast('Game created!', 'success');
         break;
       case 'error':
         this.showError(message.data.message);
@@ -131,9 +188,6 @@ class WolfGameApp {
     }
   }
   
-  /**
-   * Send message to Devvit
-   */
   postToDevvit(message) {
     parent.postMessage(message, '*');
   }
@@ -146,84 +200,77 @@ class WolfGameApp {
       this.scores[userId] = { username, score: 0 };
     }
     
-    // Auto-start the game
-    this.startGame();
+    // Update user name display
+    if (this.elements.userName) {
+      this.elements.userName.textContent = username || 'You';
+    }
   }
   
   startGame() {
-    // Hide loading, show game screen
-    this.elements.loading.classList.add('hidden');
-    this.elements.gameScreen.classList.remove('hidden');
-    
-    // Initialize game
+    // Hide loading, assign role and word
     this.assignRoleAndWord();
     this.createComputerPlayers();
-    this.updateUI();
-    
-    this.gameState = 'clues';
+    this.showRoleScreen();
   }
   
   assignRoleAndWord() {
-    // Randomly assign wolf or sheep (20% chance of being wolf)
+    // 20% chance of being wolf, 80% sheep
     this.userRole = Math.random() < 0.2 ? 'wolf' : 'sheep';
     
     // Pick random word pair
-    const wordPair = WORD_PAIRS[Math.floor(Math.random() * WORD_PAIRS.length)];
-    this.userWord = this.userRole === 'wolf' ? wordPair.wolf : wordPair.sheep;
-    
-    // Store the word pair for computer players
-    this.currentWordPair = wordPair;
+    this.currentWordPair = WORD_PAIRS[Math.floor(Math.random() * WORD_PAIRS.length)];
+    this.userWord = this.userRole === 'wolf' ? this.currentWordPair.wolf : this.currentWordPair.sheep;
   }
   
   createComputerPlayers() {
     this.computerPlayers = [];
     
-    for (let i = 0; i < 5; i++) {
-      const isWolf = this.userRole === 'sheep' && i === 0; // Only one wolf in the game
-      const player = {
-        id: `computer_${i}`,
-        name: COMPUTER_NAMES[i],
+    // Ensure exactly one wolf in the game
+    const wolfIndex = this.userRole === 'sheep' ? Math.floor(Math.random() * 5) : -1;
+    
+    COMPUTER_PLAYERS.forEach((player, index) => {
+      const isWolf = index === wolfIndex;
+      const computerPlayer = {
+        ...player,
         isWolf,
         word: isWolf ? this.currentWordPair.wolf : this.currentWordPair.sheep,
         clues: [],
         vote: null,
-        isComputer: true
       };
       
-      this.computerPlayers.push(player);
-    }
-  }
-  
-  updateUI() {
-    // Update round and role display
-    this.elements.roundNumber.textContent = `Round ${this.roundNumber}`;
-    this.elements.userRole.textContent = this.userRole === 'wolf' ? '🐺 Wolf' : '🐑 Sheep';
-    this.elements.userRole.className = `role-badge ${this.userRole}`;
-    this.elements.assignedWord.textContent = this.userWord;
-    
-    // Update clues instruction based on role
-    const instruction = this.userRole === 'wolf' 
-      ? 'Give 3 misleading clues (try to blend in!):'
-      : 'Give 3 honest clues about your word:';
-    document.getElementById('clues-instruction').textContent = instruction;
-    
-    // Show computer players
-    this.updateComputerPlayersDisplay();
-  }
-  
-  updateComputerPlayersDisplay() {
-    const container = this.elements.computerPlayersList;
-    container.innerHTML = '';
-    
-    this.computerPlayers.forEach(player => {
-      const playerDiv = document.createElement('div');
-      playerDiv.className = 'computer-player';
-      playerDiv.innerHTML = `
-        <span class="player-name">${player.name}</span>
-        <span class="player-status">Ready</span>
-      `;
-      container.appendChild(playerDiv);
+      this.computerPlayers.push(computerPlayer);
     });
+  }
+  
+  showRoleScreen() {
+    this.hideAllScreens();
+    this.elements.roleScreen.classList.remove('hidden');
+    
+    // Update role display
+    this.elements.roleDisplay.textContent = this.userRole === 'wolf' ? '🐺 WOLF' : '🐑 SHEEP';
+    this.elements.roleDisplay.className = `role-badge ${this.userRole}`;
+    
+    // Update word display
+    this.elements.wordDisplay.textContent = this.userWord.toUpperCase();
+    
+    // Update instruction
+    const instruction = this.userRole === 'wolf' 
+      ? 'Give misleading clues to blend in with the sheep!'
+      : 'Give honest clues about your word to help catch the wolf!';
+    this.elements.roleInstruction.textContent = instruction;
+  }
+  
+  showCluesScreen() {
+    this.hideAllScreens();
+    this.elements.cluesScreen.classList.remove('hidden');
+    
+    // Update word reminder
+    this.elements.cluesWordDisplay.textContent = this.userWord.toUpperCase();
+    
+    // Clear previous clues
+    this.elements.clue1.value = '';
+    this.elements.clue2.value = '';
+    this.elements.clue3.value = '';
   }
   
   async submitClues() {
@@ -239,319 +286,353 @@ class WolfGameApp {
     // Store user clues
     this.userClues = [clue1, clue2, clue3];
     
-    // Disable clues section
-    this.elements.cluesSection.classList.add('hidden');
-    this.elements.computerStatus.classList.remove('hidden');
+    // Show thinking status
+    this.elements.computerThinking.classList.remove('hidden');
+    this.elements.btnSubmitClues.disabled = true;
     
-    // Generate computer clues
-    await this.generateComputerClues();
-    
-    // Show all clues and start voting
-    this.showVotingPhase();
-  }
-  
-  async generateComputerClues() {
-    // Simulate thinking time
+    // Generate computer clues after delay
     await this.sleep(2000);
+    this.generateComputerClues();
     
-    for (const player of this.computerPlayers) {
-      player.clues = this.generateCluesForWord(player.word, player.isWolf);
-    }
+    // Show bonfire screen
+    this.showBonfireScreen();
   }
   
-  generateCluesForWord(word, isWolf) {
-    // Get base clues for the word
-    const baseClues = CLUE_TEMPLATES[word] || ['mysterious', 'interesting', 'unique'];
-    
-    if (isWolf) {
-      // Wolf should give slightly misleading clues
-      const misleadingClues = [
-        'common thing', 'everyone knows', 'very popular',
-        'simple concept', 'basic item', 'ordinary stuff'
-      ];
-      return this.shuffleArray([...baseClues, ...misleadingClues]).slice(0, 3);
-    } else {
-      // Sheep give honest clues
-      return this.shuffleArray(baseClues).slice(0, 3);
-    }
+  generateComputerClues() {
+    this.computerPlayers.forEach(player => {
+      const templates = CLUE_TEMPLATES[player.word] || ['thing', 'item', 'object'];
+      
+      if (player.isWolf) {
+        // Wolf gives slightly misleading clues
+        const misleadingClues = ['common', 'popular', 'basic', 'normal', 'typical', 'ordinary'];
+        const allClues = [...templates, ...misleadingClues];
+        player.clues = this.shuffleArray(allClues).slice(0, 3);
+      } else {
+        // Sheep give honest clues
+        player.clues = this.shuffleArray(templates).slice(0, 3);
+      }
+    });
   }
   
-  showVotingPhase() {
-    this.gameState = 'voting';
+  showBonfireScreen() {
+    this.hideAllScreens();
+    this.elements.bonfireScreen.classList.remove('hidden');
     
-    // Hide computer status, show clues and voting
-    this.elements.computerStatus.classList.add('hidden');
-    this.elements.allCluesSection.classList.remove('hidden');
-    this.elements.votingSection.classList.remove('hidden');
+    // Update user clues display
+    this.elements.userClue1.textContent = this.userClues[0];
+    this.elements.userClue2.textContent = this.userClues[1];
+    this.elements.userClue3.textContent = this.userClues[2];
     
-    // Display all clues
-    this.displayAllClues();
+    // Update computer player clues
+    this.computerPlayers.forEach(player => {
+      const playerSpot = document.querySelector(`[data-player="${player.id}"]`);
+      if (playerSpot) {
+        const clueElements = playerSpot.querySelectorAll('.clue-bubble');
+        clueElements.forEach((element, index) => {
+          if (player.clues[index]) {
+            element.textContent = player.clues[index];
+          }
+        });
+      }
+    });
+  }
+  
+  showAccusationsScreen() {
+    this.hideAllScreens();
+    this.elements.accusationsScreen.classList.remove('hidden');
     
-    // Create voting options
-    this.createVotingOptions();
+    // Reset accusations
+    this.accusations = [];
+    this.selectedAccusation = null;
+    this.elements.accusationInput.classList.add('hidden');
+    this.elements.btnContinueToVoting.classList.add('hidden');
+    this.updateAccusationsList();
+  }
+  
+  selectPlayerForAccusation(playerId) {
+    this.selectedAccusation = playerId;
+    
+    // Update UI
+    document.querySelectorAll('.player-btn').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+    document.querySelector(`[data-player="${playerId}"]`).classList.add('selected');
+    
+    // Show accusation input
+    this.elements.accusationInput.classList.remove('hidden');
+    const playerName = this.computerPlayers.find(p => p.id === playerId)?.name || playerId;
+    this.elements.accusedName.textContent = playerName;
+    this.elements.accusationReason.value = '';
+  }
+  
+  submitAccusation() {
+    const reason = this.elements.accusationReason.value.trim();
+    if (!reason) {
+      this.showError('Please provide a reason for your accusation');
+      return;
+    }
+    
+    const playerName = this.computerPlayers.find(p => p.id === this.selectedAccusation)?.name;
+    this.accusations.push({
+      accuser: this.currentUser?.username || 'You',
+      accused: playerName,
+      reason: reason
+    });
+    
+    // Generate computer accusations
+    this.generateComputerAccusations();
+    
+    // Update display
+    this.updateAccusationsList();
+    
+    // Hide input and show continue button
+    this.elements.accusationInput.classList.add('hidden');
+    this.elements.btnContinueToVoting.classList.remove('hidden');
+  }
+  
+  generateComputerAccusations() {
+    const reasons = [
+      'clues seem off',
+      'too vague',
+      'suspicious behavior',
+      'weird clues',
+      'acting strange',
+      'not convincing',
+      'seems fake',
+      'gut feeling'
+    ];
+    
+    this.computerPlayers.forEach(accuser => {
+      // Each computer player accuses someone randomly
+      const targets = this.computerPlayers.filter(p => p.id !== accuser.id);
+      const target = targets[Math.floor(Math.random() * targets.length)];
+      const reason = reasons[Math.floor(Math.random() * reasons.length)];
+      
+      this.accusations.push({
+        accuser: accuser.name,
+        accused: target.name,
+        reason: reason
+      });
+    });
+  }
+  
+  updateAccusationsList() {
+    this.elements.accusationsList.innerHTML = '';
+    
+    this.accusations.forEach(accusation => {
+      const item = document.createElement('div');
+      item.className = 'accusation-item';
+      item.textContent = `${accusation.accuser} → ${accusation.accused}: ${accusation.reason}`;
+      this.elements.accusationsList.appendChild(item);
+    });
+  }
+  
+  showVotingScreen() {
+    this.hideAllScreens();
+    this.elements.votingScreen.classList.remove('hidden');
+    
+    // Reset votes
+    this.votes = {};
+    this.elements.yourVote.classList.add('hidden');
     
     // Start voting timer
     this.startVotingTimer(30);
     
-    // Generate computer votes (delayed)
-    setTimeout(() => this.generateComputerVotes(), 5000);
+    // Generate computer votes after delay
+    setTimeout(() => this.generateComputerVotes(), 3000);
   }
   
-  displayAllClues() {
-    const container = this.elements.cluesContainer;
-    container.innerHTML = '';
+  startVotingTimer(seconds) {
+    let timeLeft = seconds;
+    this.elements.timerDisplay.textContent = `${timeLeft}s`;
     
-    // User clues
-    const userDiv = document.createElement('div');
-    userDiv.className = 'player-clues';
-    userDiv.innerHTML = `
-      <h4>${this.currentUser.username} (You)</h4>
-      <div class="clues-list">
-        ${this.userClues.map(clue => `<span class="clue">${clue}</span>`).join('')}
-      </div>
-    `;
-    container.appendChild(userDiv);
-    
-    // Computer player clues
-    this.computerPlayers.forEach(player => {
-      const playerDiv = document.createElement('div');
-      playerDiv.className = 'player-clues';
-      playerDiv.innerHTML = `
-        <h4>${player.name}</h4>
-        <div class="clues-list">
-          ${player.clues.map(clue => `<span class="clue">${clue}</span>`).join('')}
-        </div>
-      `;
-      container.appendChild(playerDiv);
-    });
+    this.votingTimer = setInterval(() => {
+      timeLeft--;
+      this.elements.timerDisplay.textContent = `${timeLeft}s`;
+      
+      if (timeLeft <= 0) {
+        clearInterval(this.votingTimer);
+        this.processVotingResults();
+      }
+    }, 1000);
   }
   
-  createVotingOptions() {
-    const container = this.elements.votingOptions;
-    container.innerHTML = '';
+  submitVote(playerId) {
+    if (this.votes.user) return; // Already voted
     
-    // Add computer players as voting options
-    this.computerPlayers.forEach(player => {
-      const button = document.createElement('button');
-      button.className = 'vote-option';
-      button.textContent = player.name;
-      button.addEventListener('click', () => this.selectVoteTarget(player.id));
-      container.appendChild(button);
-    });
-  }
-  
-  selectVoteTarget(playerId) {
-    this.selectedVoteTarget = playerId;
+    this.votes.user = playerId;
     
     // Update UI
-    document.querySelectorAll('.vote-option').forEach(btn => {
-      btn.classList.remove('selected');
+    document.querySelectorAll('.vote-btn').forEach(btn => {
+      btn.classList.remove('voted');
     });
-    event.target.classList.add('selected');
+    document.querySelector(`[data-player="${playerId}"]`).classList.add('voted');
     
-    this.elements.submitVote.disabled = false;
+    // Show vote confirmation
+    const playerName = this.computerPlayers.find(p => p.id === playerId)?.name;
+    this.elements.votedPlayer.textContent = playerName;
+    this.elements.yourVote.classList.remove('hidden');
+    
+    // Check if all votes are in
+    if (Object.keys(this.votes).length >= 6) { // User + 5 computers
+      clearInterval(this.votingTimer);
+      this.processVotingResults();
+    }
   }
   
   generateComputerVotes() {
-    // Computer players vote randomly (future: AI can make smarter decisions here)
-    const allPlayers = [...this.computerPlayers, { id: 'user', name: this.currentUser.username }];
-    
     this.computerPlayers.forEach(voter => {
-      // Don't vote for self
-      const targets = allPlayers.filter(p => p.id !== voter.id);
-      const randomTarget = targets[Math.floor(Math.random() * targets.length)];
-      voter.vote = randomTarget.id;
+      // Computer players vote randomly (could be made smarter)
+      const targets = this.computerPlayers.filter(p => p.id !== voter.id);
+      const target = targets[Math.floor(Math.random() * targets.length)];
+      this.votes[voter.id] = target.id;
     });
+    
+    // Update vote counts display
+    this.updateVoteCounts();
   }
   
-  submitVote() {
-    if (!this.selectedVoteTarget) return;
+  updateVoteCounts() {
+    const voteCounts = {};
+    Object.values(this.votes).forEach(vote => {
+      voteCounts[vote] = (voteCounts[vote] || 0) + 1;
+    });
     
-    // Stop timer
-    if (this.votingTimer) {
-      clearInterval(this.votingTimer);
-    }
-    
-    // Process voting results
-    this.processVotingResults();
+    // Update display
+    this.computerPlayers.forEach(player => {
+      const voteElement = document.getElementById(`votes-${player.id}`);
+      if (voteElement) {
+        const count = voteCounts[player.id] || 0;
+        voteElement.textContent = `${count} votes`;
+      }
+    });
   }
   
   processVotingResults() {
-    this.gameState = 'results';
-    
-    // Hide voting, show results
-    this.elements.votingSection.classList.add('hidden');
-    this.elements.resultsSection.classList.remove('hidden');
-    
-    // Calculate votes
-    const votes = {};
-    
-    // User vote
-    votes[this.selectedVoteTarget] = (votes[this.selectedVoteTarget] || 0) + 1;
-    
-    // Computer votes
-    this.computerPlayers.forEach(player => {
-      if (player.vote) {
-        votes[player.vote] = (votes[player.vote] || 0) + 1;
-      }
+    // Count votes
+    const voteCounts = {};
+    Object.values(this.votes).forEach(vote => {
+      voteCounts[vote] = (voteCounts[vote] || 0) + 1;
     });
     
     // Find player with most votes
-    const eliminatedPlayerId = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
+    const eliminatedId = Object.keys(voteCounts).reduce((a, b) => 
+      voteCounts[a] > voteCounts[b] ? a : b
+    );
     
-    // Display results
-    this.displayVotingResults(votes, eliminatedPlayerId);
-    
-    // Update scores and determine game outcome
-    this.updateScoresAndOutcome(eliminatedPlayerId);
+    this.showResultsScreen(eliminatedId);
   }
   
-  displayVotingResults(votes, eliminatedPlayerId) {
-    const container = this.elements.votesContainer;
-    container.innerHTML = '';
+  showResultsScreen(eliminatedId) {
+    this.hideAllScreens();
+    this.elements.resultsScreen.classList.remove('hidden');
     
-    // Show vote breakdown
-    Object.entries(votes).forEach(([playerId, voteCount]) => {
-      const playerName = playerId === 'user' 
-        ? this.currentUser.username 
-        : this.computerPlayers.find(p => p.id === playerId)?.name || 'Unknown';
-      
-      const voteDiv = document.createElement('div');
-      voteDiv.className = 'vote-result';
-      voteDiv.innerHTML = `
-        <span class="player-name">${playerName}</span>
-        <span class="vote-count">${voteCount} votes</span>
-      `;
-      container.appendChild(voteDiv);
-    });
+    const eliminatedPlayer = this.computerPlayers.find(p => p.id === eliminatedId);
+    const wasWolf = eliminatedPlayer?.isWolf || false;
     
-    // Show eliminated player
-    const eliminatedName = eliminatedPlayerId === 'user' 
-      ? this.currentUser.username 
-      : this.computerPlayers.find(p => p.id === eliminatedPlayerId)?.name || 'Unknown';
+    // Update elimination display
+    this.elements.eliminatedText.textContent = `${eliminatedPlayer?.name} has been eliminated!`;
+    this.elements.eliminatedPlayer.querySelector('.player-avatar').textContent = eliminatedPlayer?.avatar;
+    this.elements.eliminatedPlayer.querySelector('.pixel-text').textContent = eliminatedPlayer?.name;
+    this.elements.eliminatedRole.textContent = wasWolf ? 'Was the WOLF' : 'Was a SHEEP';
+    this.elements.eliminatedRole.style.background = wasWolf ? '#FF4444' : '#44FF44';
     
-    this.elements.eliminatedPlayer.innerHTML = `
-      <h3>❌ ${eliminatedName} has been eliminated!</h3>
-    `;
-  }
-  
-  updateScoresAndOutcome(eliminatedPlayerId) {
-    const eliminatedPlayer = eliminatedPlayerId === 'user' 
-      ? { isWolf: this.userRole === 'wolf' }
-      : this.computerPlayers.find(p => p.id === eliminatedPlayerId);
-    
-    let outcome = '';
+    // Determine game outcome
     let userWon = false;
+    let outcomeText = '';
+    let outcomeDescription = '';
+    let points = 2; // Base participation points
     
-    if (eliminatedPlayer.isWolf) {
+    if (wasWolf) {
       // Wolf was eliminated - Sheep win
-      outcome = '🎉 The Wolf has been caught! Sheep win!';
+      outcomeText = '🎉 Sheep Win!';
+      outcomeDescription = 'The wolf has been caught!';
       if (this.userRole === 'sheep') {
         userWon = true;
-        this.scores[this.currentUser.userId].score += 10;
+        points += 10;
       }
     } else {
       // Innocent was eliminated - Wolf wins
-      outcome = '🐺 An innocent was eliminated! Wolf wins!';
+      outcomeText = '🐺 Wolf Wins!';
+      outcomeDescription = 'An innocent was eliminated. The wolf remains hidden!';
       if (this.userRole === 'wolf') {
         userWon = true;
-        this.scores[this.currentUser.userId].score += 15;
+        points += 15;
       }
     }
     
-    // Participation points
-    this.scores[this.currentUser.userId].score += 2;
+    // Update outcome display
+    this.elements.outcomeText.textContent = outcomeText;
+    this.elements.outcomeDescription.textContent = outcomeDescription;
     
-    this.elements.gameOutcomeText.innerHTML = `
-      <h3>${outcome}</h3>
-      <p>You ${userWon ? 'won' : 'lost'} this round!</p>
-    `;
+    // Update score
+    this.scores[this.currentUser?.userId].score += points;
+    this.elements.userScore.textContent = `+${points} points`;
     
-    // Update leaderboard
-    this.updateLeaderboard();
-    
-    // Show next round button
-    this.elements.nextRound.classList.remove('hidden');
-  }
-  
-  updateLeaderboard() {
-    const container = this.elements.leaderboardContainer;
-    container.innerHTML = '';
-    
-    // For now, just show user's score (in future, load from Devvit/Redis)
-    const userScore = this.scores[this.currentUser.userId];
-    const leaderboardDiv = document.createElement('div');
-    leaderboardDiv.className = 'leaderboard-entry';
-    leaderboardDiv.innerHTML = `
-      <span class="rank">1st</span>
-      <span class="username">${userScore.username}</span>
-      <span class="score">${userScore.score} pts</span>
-    `;
-    container.appendChild(leaderboardDiv);
-    
-    // TODO: Load and display full leaderboard from Devvit
+    // Send score update to Devvit
     this.postToDevvit({ 
       type: 'updateScore', 
-      score: userScore.score,
-      userId: this.currentUser.userId
+      data: { 
+        score: points,
+        userId: this.currentUser?.userId 
+      }
     });
   }
   
   nextRound() {
     this.roundNumber++;
-    
-    // Reset game state
-    this.gameState = 'clues';
-    this.selectedVoteTarget = null;
-    this.userClues = [];
-    
-    // Clear inputs
-    this.elements.clue1.value = '';
-    this.elements.clue2.value = '';
-    this.elements.clue3.value = '';
-    
-    // Hide results, show word and clues sections
-    this.elements.resultsSection.classList.add('hidden');
-    this.elements.wordSection.classList.remove('hidden');
-    this.elements.cluesSection.classList.remove('hidden');
-    this.elements.allCluesSection.classList.add('hidden');
-    
-    // Reassign roles and words
-    this.assignRoleAndWord();
-    this.createComputerPlayers();
-    this.updateUI();
+    this.resetGame();
+    this.startGame();
   }
   
   newGame() {
-    // Reset everything
     this.roundNumber = 1;
-    this.scores[this.currentUser.userId].score = 0;
+    this.scores[this.currentUser?.userId].score = 0;
+    this.resetGame();
+    this.startGame();
+  }
+  
+  resetGame() {
+    // Reset game state
+    this.userClues = [];
+    this.accusations = [];
+    this.votes = {};
+    this.selectedAccusation = null;
     
-    this.nextRound();
+    if (this.votingTimer) {
+      clearInterval(this.votingTimer);
+      this.votingTimer = null;
+    }
+    
+    // Clear form inputs
+    this.elements.clue1.value = '';
+    this.elements.clue2.value = '';
+    this.elements.clue3.value = '';
+    this.elements.accusationReason.value = '';
+    
+    // Reset button states
+    this.elements.btnSubmitClues.disabled = false;
+    this.elements.computerThinking.classList.add('hidden');
+    this.elements.accusationInput.classList.add('hidden');
+    this.elements.btnContinueToVoting.classList.add('hidden');
+    this.elements.yourVote.classList.add('hidden');
+    
+    // Clear selections
+    document.querySelectorAll('.player-btn').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+    document.querySelectorAll('.vote-btn').forEach(btn => {
+      btn.classList.remove('voted');
+    });
+  }
+  
+  hideAllScreens() {
+    document.querySelectorAll('.screen').forEach(screen => {
+      screen.classList.add('hidden');
+    });
   }
   
   // Utility functions
-  startVotingTimer(seconds) {
-    let timeLeft = seconds;
-    this.elements.votingTimer.textContent = `Time left: ${timeLeft}s`;
-    
-    this.votingTimer = setInterval(() => {
-      timeLeft--;
-      this.elements.votingTimer.textContent = `Time left: ${timeLeft}s`;
-      
-      if (timeLeft <= 0) {
-        clearInterval(this.votingTimer);
-        // Auto-submit if user hasn't voted
-        if (!this.selectedVoteTarget) {
-          // Vote for random player
-          const randomPlayer = this.computerPlayers[Math.floor(Math.random() * this.computerPlayers.length)];
-          this.selectedVoteTarget = randomPlayer.id;
-        }
-        this.submitVote();
-      }
-    }, 1000);
-  }
-  
   shuffleArray(array) {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -589,4 +670,4 @@ class WolfGameApp {
 }
 
 // Initialize the game when the page loads
-new WolfGameApp(); 
+new WolfGameApp();
