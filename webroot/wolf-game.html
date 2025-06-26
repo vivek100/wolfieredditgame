@@ -11,93 +11,281 @@
   </head>
   <body>
     <div id="app">
-      <div id="loading" class="screen">
-        <div class="loading-spinner"></div>
-        <h2>Starting Wolf Game...</h2>
+      <!-- Loading Screen -->
+      <div id="loading-screen" class="screen">
+        <div class="pixel-container">
+          <div class="loading-spinner"></div>
+          <div class="pixel-text large">Starting Wolf Game...</div>
+        </div>
       </div>
       
-      <!-- Game Screen - Single unified screen -->
-      <div id="game-screen" class="screen hidden">
-        <div class="game-header">
-          <h1>🐺 Who is the Wolf?</h1>
-          <div class="round-info">
-            <span id="round-number">Round 1</span>
-            <span id="user-role" class="role-badge">🐑 Sheep</span>
-          </div>
-        </div>
-        
-        <!-- Word Assignment -->
-        <div id="word-section" class="game-section">
-          <div class="word-display">
-            <p>Your word is:</p>
-            <span id="assigned-word" class="word">Apple</span>
-          </div>
-        </div>
-        
-        <!-- Clues Section -->
-        <div id="clues-section" class="game-section">
-          <h3 id="clues-instruction">Give 3 clues about your word:</h3>
-          <div class="clues-input">
-            <input type="text" id="clue1" placeholder="Clue 1" maxlength="50">
-            <input type="text" id="clue2" placeholder="Clue 2" maxlength="50">
-            <input type="text" id="clue3" placeholder="Clue 3" maxlength="50">
-          </div>
-          <button id="btn-submit-clues" class="primary-btn">
-            Submit Clues
-          </button>
-        </div>
-        
-        <!-- Computer Players Status -->
-        <div id="computer-status" class="game-section hidden">
-          <h3>Computer Players:</h3>
-          <div id="computer-players-list"></div>
-          <p class="status-text">Computer players are generating clues...</p>
-        </div>
-        
-        <!-- All Clues Display -->
-        <div id="all-clues-section" class="game-section hidden">
-          <h3>All Player Clues:</h3>
-          <div id="clues-container"></div>
-        </div>
-        
-        <!-- Voting Section -->
-        <div id="voting-section" class="game-section hidden">
-          <h3>🗳️ Vote for the Wolf:</h3>
-          <div id="voting-options"></div>
-          <button id="btn-submit-vote" class="primary-btn" disabled>
-            Submit Vote
-          </button>
-          <div id="voting-timer" class="timer">Time left: 30s</div>
-        </div>
-        
-        <!-- Results Section -->
-        <div id="results-section" class="game-section hidden">
-          <h2 id="results-title">🎉 Round Results</h2>
+      <!-- Role Assignment Screen -->
+      <div id="role-screen" class="screen hidden">
+        <div class="pixel-container">
+          <div class="pixel-text title">🐺 Who is the Wolf?</div>
+          <div class="pixel-text subtitle">A social deduction game</div>
           
-          <div class="voting-results">
-            <h3>Voting Results:</h3>
-            <div id="votes-container"></div>
+          <div class="role-reveal">
+            <div class="pixel-text medium">You are a...</div>
+            <div id="role-display" class="role-badge">🐑 SHEEP</div>
+            <div class="pixel-text medium">Your word is:</div>
+            <div id="word-display" class="word-badge">APPLE</div>
           </div>
+          
+          <div class="instruction-box">
+            <div id="role-instruction" class="pixel-text small">
+              Give 3 honest clues about your word to help catch the wolf!
+            </div>
+          </div>
+          
+          <button id="btn-continue-to-clues" class="pixel-btn primary">
+            CONTINUE
+          </button>
+        </div>
+      </div>
+      
+      <!-- Clues Input Screen -->
+      <div id="clues-screen" class="screen hidden">
+        <div class="pixel-container">
+          <div class="pixel-text title">Give Your Clues</div>
+          
+          <div class="word-reminder">
+            <div class="pixel-text small">Your word:</div>
+            <div id="clues-word-display" class="word-badge small">APPLE</div>
+          </div>
+          
+          <div class="clues-form">
+            <div class="clue-input-group">
+              <div class="pixel-text small">Clue 1:</div>
+              <input type="text" id="clue1" class="pixel-input" placeholder="Enter first clue" maxlength="20">
+            </div>
+            <div class="clue-input-group">
+              <div class="pixel-text small">Clue 2:</div>
+              <input type="text" id="clue2" class="pixel-input" placeholder="Enter second clue" maxlength="20">
+            </div>
+            <div class="clue-input-group">
+              <div class="pixel-text small">Clue 3:</div>
+              <input type="text" id="clue3" class="pixel-input" placeholder="Enter third clue" maxlength="20">
+            </div>
+          </div>
+          
+          <button id="btn-submit-clues" class="pixel-btn primary">
+            SUBMIT CLUES
+          </button>
+          
+          <div id="computer-thinking" class="thinking-status hidden">
+            <div class="pixel-text small">Other players are thinking...</div>
+            <div class="thinking-dots">...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bonfire Discussion Screen -->
+      <div id="bonfire-screen" class="screen hidden">
+        <div class="pixel-container">
+          <div class="pixel-text title">Around the Bonfire</div>
+          <div class="pixel-text subtitle">Discuss the clues</div>
+          
+          <div class="bonfire-scene">
+            <div class="bonfire">🔥</div>
+            <div class="players-circle">
+              <div class="player-spot player-user">
+                <div class="player-avatar">👤</div>
+                <div class="player-name pixel-text tiny" id="user-name">You</div>
+                <div class="player-clues">
+                  <div class="clue-bubble" id="user-clue1">clue1</div>
+                  <div class="clue-bubble" id="user-clue2">clue2</div>
+                  <div class="clue-bubble" id="user-clue3">clue3</div>
+                </div>
+              </div>
+              
+              <div class="player-spot" data-player="alice">
+                <div class="player-avatar">👩</div>
+                <div class="player-name pixel-text tiny">Alice</div>
+                <div class="player-clues">
+                  <div class="clue-bubble">red</div>
+                  <div class="clue-bubble">fruit</div>
+                  <div class="clue-bubble">sweet</div>
+                </div>
+              </div>
+              
+              <div class="player-spot" data-player="bob">
+                <div class="player-avatar">👨</div>
+                <div class="player-name pixel-text tiny">Bob</div>
+                <div class="player-clues">
+                  <div class="clue-bubble">round</div>
+                  <div class="clue-bubble">healthy</div>
+                  <div class="clue-bubble">crunchy</div>
+                </div>
+              </div>
+              
+              <div class="player-spot" data-player="charlie">
+                <div class="player-avatar">🧑</div>
+                <div class="player-name pixel-text tiny">Charlie</div>
+                <div class="player-clues">
+                  <div class="clue-bubble">tree</div>
+                  <div class="clue-bubble">green</div>
+                  <div class="clue-bubble">juice</div>
+                </div>
+              </div>
+              
+              <div class="player-spot" data-player="diana">
+                <div class="player-avatar">👩‍🦰</div>
+                <div class="player-name pixel-text tiny">Diana</div>
+                <div class="player-clues">
+                  <div class="clue-bubble">snack</div>
+                  <div class="clue-bubble">crisp</div>
+                  <div class="clue-bubble">orchard</div>
+                </div>
+              </div>
+              
+              <div class="player-spot" data-player="eva">
+                <div class="player-avatar">👩‍🦱</div>
+                <div class="player-name pixel-text tiny">Eva</div>
+                <div class="player-clues">
+                  <div class="clue-bubble">common</div>
+                  <div class="clue-bubble">popular</div>
+                  <div class="clue-bubble">basic</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <button id="btn-continue-to-accusations" class="pixel-btn primary">
+            MAKE ACCUSATIONS
+          </button>
+        </div>
+      </div>
+      
+      <!-- Accusations Screen -->
+      <div id="accusations-screen" class="screen hidden">
+        <div class="pixel-container">
+          <div class="pixel-text title">Make Your Accusation</div>
+          
+          <div class="accusation-form">
+            <div class="pixel-text small">Who do you think is the wolf?</div>
+            <div class="player-selection">
+              <button class="player-btn" data-player="alice">
+                <div class="player-avatar">👩</div>
+                <div class="pixel-text tiny">Alice</div>
+              </button>
+              <button class="player-btn" data-player="bob">
+                <div class="player-avatar">👨</div>
+                <div class="pixel-text tiny">Bob</div>
+              </button>
+              <button class="player-btn" data-player="charlie">
+                <div class="player-avatar">🧑</div>
+                <div class="pixel-text tiny">Charlie</div>
+              </button>
+              <button class="player-btn" data-player="diana">
+                <div class="player-avatar">👩‍🦰</div>
+                <div class="pixel-text tiny">Diana</div>
+              </button>
+              <button class="player-btn" data-player="eva">
+                <div class="player-avatar">👩‍🦱</div>
+                <div class="pixel-text tiny">Eva</div>
+              </button>
+            </div>
+            
+            <div class="accusation-input hidden" id="accusation-input">
+              <div class="pixel-text small">Why do you suspect <span id="accused-name">them</span>?</div>
+              <input type="text" id="accusation-reason" class="pixel-input" placeholder="4-5 word reason" maxlength="30">
+              <button id="btn-submit-accusation" class="pixel-btn secondary">
+                SUBMIT ACCUSATION
+              </button>
+            </div>
+          </div>
+          
+          <div class="accusations-table" id="accusations-table">
+            <div class="pixel-text small">Accusations:</div>
+            <div class="accusations-list" id="accusations-list">
+              <!-- Accusations will be added here -->
+            </div>
+          </div>
+          
+          <button id="btn-continue-to-voting" class="pixel-btn primary hidden">
+            PROCEED TO VOTING
+          </button>
+        </div>
+      </div>
+      
+      <!-- Voting Screen -->
+      <div id="voting-screen" class="screen hidden">
+        <div class="pixel-container">
+          <div class="pixel-text title">Final Vote</div>
+          <div class="pixel-text subtitle">Who gets eliminated?</div>
+          
+          <div class="voting-timer">
+            <div class="pixel-text small">Time remaining:</div>
+            <div id="timer-display" class="pixel-text medium">30s</div>
+          </div>
+          
+          <div class="voting-options">
+            <button class="vote-btn" data-player="alice">
+              <div class="player-avatar">👩</div>
+              <div class="pixel-text tiny">Alice</div>
+              <div class="vote-count" id="votes-alice">0 votes</div>
+            </button>
+            <button class="vote-btn" data-player="bob">
+              <div class="player-avatar">👨</div>
+              <div class="pixel-text tiny">Bob</div>
+              <div class="vote-count" id="votes-bob">0 votes</div>
+            </button>
+            <button class="vote-btn" data-player="charlie">
+              <div class="player-avatar">🧑</div>
+              <div class="pixel-text tiny">Charlie</div>
+              <div class="vote-count" id="votes-charlie">0 votes</div>
+            </button>
+            <button class="vote-btn" data-player="diana">
+              <div class="player-avatar">👩‍🦰</div>
+              <div class="pixel-text tiny">Diana</div>
+              <div class="vote-count" id="votes-diana">0 votes</div>
+            </button>
+            <button class="vote-btn" data-player="eva">
+              <div class="player-avatar">👩‍🦱</div>
+              <div class="pixel-text tiny">Eva</div>
+              <div class="vote-count" id="votes-eva">0 votes</div>
+            </button>
+          </div>
+          
+          <div class="your-vote hidden" id="your-vote">
+            <div class="pixel-text small">You voted for: <span id="voted-player">Alice</span></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Results Screen -->
+      <div id="results-screen" class="screen hidden">
+        <div class="pixel-container">
+          <div class="pixel-text title" id="results-title">🎉 Round Results</div>
           
           <div class="elimination-result">
-            <div id="eliminated-player"></div>
+            <div class="pixel-text medium" id="eliminated-text">Alice has been eliminated!</div>
+            <div class="eliminated-player" id="eliminated-player">
+              <div class="player-avatar">👩</div>
+              <div class="pixel-text small">Alice</div>
+              <div class="role-reveal-result" id="eliminated-role">Was a SHEEP</div>
+            </div>
           </div>
           
-          <div class="game-outcome">
-            <div id="game-outcome-text"></div>
+          <div class="game-outcome" id="game-outcome">
+            <div class="pixel-text large" id="outcome-text">🐺 Wolf Wins!</div>
+            <div class="pixel-text small" id="outcome-description">
+              An innocent was eliminated. The wolf remains hidden!
+            </div>
           </div>
           
-          <div class="leaderboard">
-            <h3>🏆 Leaderboard</h3>
-            <div id="leaderboard-container"></div>
+          <div class="score-update">
+            <div class="pixel-text small">Your score:</div>
+            <div class="pixel-text medium" id="user-score">+15 points</div>
           </div>
           
           <div class="results-actions">
-            <button id="btn-next-round" class="primary-btn hidden">
-              Next Round
+            <button id="btn-next-round" class="pixel-btn primary">
+              NEXT ROUND
             </button>
-            <button id="btn-new-game" class="secondary-btn">
-              New Game
+            <button id="btn-new-game" class="pixel-btn secondary">
+              NEW GAME
             </button>
           </div>
         </div>
@@ -108,4 +296,4 @@
     
     <script type="application/javascript" src="wolf-game.js"></script>
   </body>
-</html> 
+</html>
