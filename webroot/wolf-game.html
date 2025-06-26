@@ -13,7 +13,7 @@
     <div id="app">
       <!-- Loading Screen -->
       <div id="loading-screen" class="screen">
-        <div class="pixel-container">
+        <div class="content-container">
           <div class="loading-spinner"></div>
           <div class="pixel-text large">Starting Wolf Game...</div>
         </div>
@@ -21,7 +21,7 @@
       
       <!-- Role Assignment Screen -->
       <div id="role-screen" class="screen hidden">
-        <div class="pixel-container">
+        <div class="content-container">
           <div class="pixel-text title">🐺 Who is the Wolf?</div>
           <div class="pixel-text subtitle">A social deduction game</div>
           
@@ -46,12 +46,12 @@
       
       <!-- Clues Input Screen -->
       <div id="clues-screen" class="screen hidden">
-        <div class="pixel-container">
+        <div class="content-container">
           <div class="pixel-text title">Give Your Clues</div>
           
           <div class="word-reminder">
             <div class="pixel-text small">Your word:</div>
-            <div id="clues-word-display" class="word-badge small">APPLE</div>
+            <div id="clues-word-display" class="word-badge">APPLE</div>
           </div>
           
           <div class="clues-form">
@@ -82,7 +82,7 @@
       
       <!-- Bonfire Discussion Screen -->
       <div id="bonfire-screen" class="screen hidden">
-        <div class="pixel-container">
+        <div class="content-container">
           <div class="pixel-text title">Around the Bonfire</div>
           <div class="pixel-text subtitle">Discuss the clues</div>
           
@@ -91,7 +91,7 @@
             <div class="players-circle">
               <div class="player-spot player-user">
                 <div class="player-avatar">👤</div>
-                <div class="player-name pixel-text tiny" id="user-name">You</div>
+                <div class="player-name pixel-text" id="user-name">You</div>
                 <div class="player-clues">
                   <div class="clue-bubble" id="user-clue1">clue1</div>
                   <div class="clue-bubble" id="user-clue2">clue2</div>
@@ -101,7 +101,7 @@
               
               <div class="player-spot" data-player="alice">
                 <div class="player-avatar">👩</div>
-                <div class="player-name pixel-text tiny">Alice</div>
+                <div class="player-name pixel-text">Alice</div>
                 <div class="player-clues">
                   <div class="clue-bubble">red</div>
                   <div class="clue-bubble">fruit</div>
@@ -111,7 +111,7 @@
               
               <div class="player-spot" data-player="bob">
                 <div class="player-avatar">👨</div>
-                <div class="player-name pixel-text tiny">Bob</div>
+                <div class="player-name pixel-text">Bob</div>
                 <div class="player-clues">
                   <div class="clue-bubble">round</div>
                   <div class="clue-bubble">healthy</div>
@@ -121,7 +121,7 @@
               
               <div class="player-spot" data-player="charlie">
                 <div class="player-avatar">🧑</div>
-                <div class="player-name pixel-text tiny">Charlie</div>
+                <div class="player-name pixel-text">Charlie</div>
                 <div class="player-clues">
                   <div class="clue-bubble">tree</div>
                   <div class="clue-bubble">green</div>
@@ -131,7 +131,7 @@
               
               <div class="player-spot" data-player="diana">
                 <div class="player-avatar">👩‍🦰</div>
-                <div class="player-name pixel-text tiny">Diana</div>
+                <div class="player-name pixel-text">Diana</div>
                 <div class="player-clues">
                   <div class="clue-bubble">snack</div>
                   <div class="clue-bubble">crisp</div>
@@ -141,7 +141,7 @@
               
               <div class="player-spot" data-player="eva">
                 <div class="player-avatar">👩‍🦱</div>
-                <div class="player-name pixel-text tiny">Eva</div>
+                <div class="player-name pixel-text">Eva</div>
                 <div class="player-clues">
                   <div class="clue-bubble">common</div>
                   <div class="clue-bubble">popular</div>
@@ -159,7 +159,7 @@
       
       <!-- Accusations Screen -->
       <div id="accusations-screen" class="screen hidden">
-        <div class="pixel-container">
+        <div class="content-container">
           <div class="pixel-text title">Make Your Accusation</div>
           
           <div class="accusation-form">
@@ -211,7 +211,7 @@
       
       <!-- Voting Screen -->
       <div id="voting-screen" class="screen hidden">
-        <div class="pixel-container">
+        <div class="content-container">
           <div class="pixel-text title">Final Vote</div>
           <div class="pixel-text subtitle">Who gets eliminated?</div>
           
@@ -256,7 +256,7 @@
       
       <!-- Results Screen -->
       <div id="results-screen" class="screen hidden">
-        <div class="pixel-container">
+        <div class="content-container">
           <div class="pixel-text title" id="results-title">🎉 Round Results</div>
           
           <div class="elimination-result">

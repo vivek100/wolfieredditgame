@@ -13,49 +13,51 @@ body {
   background: url('background.png') repeat;
   background-size: cover;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
+  color: #FFF;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
+  overflow: hidden;
 }
 
 #app {
-  width: 100%;
-  max-width: 400px;
-  min-height: 600px;
-  margin: 10px;
+  width: 692px;
+  height: 612px;
+  margin: 0;
+  padding: 0;
+  background: url('background.png') repeat;
+  background-size: cover;
+  position: relative;
 }
 
 /* Screen management */
 .screen {
   background: url('background.png') repeat;
   background-size: cover;
-  border: 4px solid #000;
-  border-radius: 0;
-  min-height: 600px;
-  width: 100%;
+  height: 612px;
+  width: 692px;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   image-rendering: pixelated;
+  padding: 20px;
 }
 
 .screen.hidden {
   display: none;
 }
 
-.pixel-container {
-  background: rgba(255, 255, 255, 0.95);
-  border: 3px solid #000;
-  padding: 20px;
-  width: 90%;
-  max-width: 350px;
+.content-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  box-shadow: 4px 4px 0px #000;
 }
 
 /* Pixel text styles */
@@ -64,38 +66,46 @@ body {
   line-height: 1.6;
   margin: 8px 0;
   text-rendering: optimizeSpeed;
+  color: #FFF;
+  text-shadow: 2px 2px 0px #000;
 }
 
 .pixel-text.title {
-  font-size: 16px;
-  color: #000;
+  font-size: 24px;
+  color: #FFF;
   margin-bottom: 16px;
+  text-shadow: 3px 3px 0px #000;
 }
 
 .pixel-text.subtitle {
-  font-size: 10px;
-  color: #666;
+  font-size: 14px;
+  color: #CCC;
   margin-bottom: 20px;
+  text-shadow: 2px 2px 0px #000;
 }
 
 .pixel-text.large {
-  font-size: 14px;
-  color: #000;
+  font-size: 18px;
+  color: #FFF;
+  text-shadow: 2px 2px 0px #000;
 }
 
 .pixel-text.medium {
-  font-size: 12px;
-  color: #000;
+  font-size: 14px;
+  color: #FFF;
+  text-shadow: 2px 2px 0px #000;
 }
 
 .pixel-text.small {
-  font-size: 8px;
-  color: #333;
+  font-size: 10px;
+  color: #DDD;
+  text-shadow: 1px 1px 0px #000;
 }
 
 .pixel-text.tiny {
-  font-size: 6px;
-  color: #333;
+  font-size: 8px;
+  color: #CCC;
+  text-shadow: 1px 1px 0px #000;
 }
 
 /* Loading Screen */
@@ -104,11 +114,12 @@ body {
 }
 
 .loading-spinner {
-  width: 40px;
-  height: 40px;
-  background: #000;
-  margin: 0 auto 20px;
+  width: 60px;
+  height: 60px;
+  background: #FFF;
+  margin: 0 auto 30px;
   animation: spin 1s linear infinite;
+  border: 3px solid #000;
 }
 
 @keyframes spin {
@@ -121,18 +132,18 @@ body {
 
 /* Role Assignment Screen */
 .role-reveal {
-  margin: 20px 0;
+  margin: 30px 0;
 }
 
 .role-badge {
   background: #FFD700;
-  border: 3px solid #000;
-  padding: 12px 20px;
-  margin: 12px 0;
+  border: 4px solid #000;
+  padding: 20px 30px;
+  margin: 20px 0;
   font-family: 'Press Start 2P', monospace;
-  font-size: 14px;
+  font-size: 20px;
   color: #000;
-  box-shadow: 3px 3px 0px #000;
+  box-shadow: 4px 4px 0px #000;
 }
 
 .role-badge.wolf {
@@ -147,48 +158,44 @@ body {
 
 .word-badge {
   background: #87CEEB;
-  border: 3px solid #000;
-  padding: 10px 16px;
-  margin: 12px 0;
+  border: 4px solid #000;
+  padding: 16px 24px;
+  margin: 20px 0;
   font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
+  font-size: 16px;
   color: #000;
-  box-shadow: 3px 3px 0px #000;
-}
-
-.word-badge.small {
-  font-size: 8px;
-  padding: 6px 12px;
+  box-shadow: 4px 4px 0px #000;
 }
 
 .instruction-box {
-  background: #F0F0F0;
-  border: 2px solid #000;
-  padding: 12px;
-  margin: 16px 0;
+  background: rgba(0, 0, 0, 0.7);
+  border: 3px solid #FFF;
+  padding: 20px;
+  margin: 20px 0;
+  max-width: 500px;
 }
 
 /* Buttons */
 .pixel-btn {
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  padding: 12px 20px;
-  border: 3px solid #000;
+  font-size: 12px;
+  padding: 16px 24px;
+  border: 4px solid #000;
   background: #FFF;
   color: #000;
   cursor: pointer;
-  margin: 8px 4px;
-  box-shadow: 3px 3px 0px #000;
+  margin: 12px 8px;
+  box-shadow: 4px 4px 0px #000;
   transition: all 0.1s ease;
 }
 
 .pixel-btn:hover {
-  transform: translate(1px, 1px);
+  transform: translate(2px, 2px);
   box-shadow: 2px 2px 0px #000;
 }
 
 .pixel-btn:active {
-  transform: translate(3px, 3px);
+  transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px #000;
 }
 
@@ -203,51 +210,56 @@ body {
 }
 
 .pixel-btn:disabled {
-  background: #CCC;
-  color: #666;
+  background: #666;
+  color: #AAA;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 3px 3px 0px #000;
+  box-shadow: 4px 4px 0px #000;
 }
 
 /* Clues Screen */
 .word-reminder {
-  margin: 16px 0;
-}
-
-.clues-form {
   margin: 20px 0;
 }
 
+.clues-form {
+  margin: 30px 0;
+  width: 100%;
+  max-width: 500px;
+}
+
 .clue-input-group {
-  margin: 16px 0;
+  margin: 20px 0;
   text-align: left;
 }
 
 .pixel-input {
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  padding: 8px;
-  border: 2px solid #000;
+  font-size: 12px;
+  padding: 12px;
+  border: 3px solid #000;
   background: #FFF;
+  color: #000;
   width: 100%;
-  margin-top: 8px;
-  box-shadow: 2px 2px 0px #000;
+  margin-top: 12px;
+  box-shadow: 3px 3px 0px #000;
 }
 
 .pixel-input:focus {
   outline: none;
   background: #FFFFCC;
+  border-color: #FFD700;
 }
 
 .thinking-status {
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
 .thinking-dots {
   font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
+  font-size: 16px;
   animation: blink 1s infinite;
+  color: #FFD700;
 }
 
 @keyframes blink {
@@ -259,11 +271,12 @@ body {
 .bonfire-scene {
   margin: 20px 0;
   position: relative;
-  height: 300px;
+  height: 450px;
+  width: 100%;
 }
 
 .bonfire {
-  font-size: 24px;
+  font-size: 40px;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -278,161 +291,175 @@ body {
 
 .players-circle {
   position: relative;
-  width: 280px;
-  height: 280px;
+  width: 600px;
+  height: 400px;
   margin: 0 auto;
 }
 
 .player-spot {
   position: absolute;
-  width: 60px;
-  height: 80px;
+  width: 120px;
   text-align: center;
 }
 
 .player-spot.player-user {
-  bottom: 10px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .player-spot[data-player="alice"] {
-  top: 20px;
-  left: 20px;
+  top: 30px;
+  left: 50px;
 }
 
 .player-spot[data-player="bob"] {
-  top: 20px;
-  right: 20px;
+  top: 30px;
+  right: 50px;
 }
 
 .player-spot[data-player="charlie"] {
   top: 50%;
-  left: 0;
+  left: 10px;
   transform: translateY(-50%);
 }
 
 .player-spot[data-player="diana"] {
   top: 50%;
-  right: 0;
+  right: 10px;
   transform: translateY(-50%);
 }
 
 .player-spot[data-player="eva"] {
-  bottom: 60px;
+  bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .player-avatar {
-  font-size: 20px;
-  margin-bottom: 4px;
+  font-size: 32px;
+  margin-bottom: 8px;
 }
 
 .player-name {
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  font-size: 10px;
+  color: #FFD700;
+  text-shadow: 2px 2px 0px #000;
 }
 
 .player-clues {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .clue-bubble {
-  background: #E0E0E0;
-  border: 1px solid #000;
-  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #000;
+  padding: 6px 8px;
   font-family: 'Press Start 2P', monospace;
-  font-size: 4px;
+  font-size: 8px;
+  color: #000;
   border-radius: 0;
+  box-shadow: 2px 2px 0px #000;
 }
 
 /* Accusations Screen */
 .accusation-form {
-  margin: 20px 0;
+  margin: 30px 0;
+  width: 100%;
+  max-width: 600px;
 }
 
 .player-selection {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 16px 0;
+  gap: 15px;
+  margin: 25px 0;
 }
 
 .player-btn {
   font-family: 'Press Start 2P', monospace;
-  font-size: 6px;
-  padding: 8px 4px;
-  border: 2px solid #000;
-  background: #FFF;
+  font-size: 8px;
+  padding: 12px 8px;
+  border: 3px solid #000;
+  background: rgba(255, 255, 255, 0.9);
+  color: #000;
   cursor: pointer;
-  box-shadow: 2px 2px 0px #000;
+  box-shadow: 3px 3px 0px #000;
   transition: all 0.1s ease;
 }
 
 .player-btn:hover {
   background: #F0F0F0;
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #000;
+  box-shadow: 2px 2px 0px #000;
 }
 
 .player-btn.selected {
   background: #FFD700;
-  transform: translate(2px, 2px);
+  transform: translate(3px, 3px);
   box-shadow: 0px 0px 0px #000;
 }
 
 .accusation-input {
-  margin: 16px 0;
+  margin: 25px 0;
   text-align: left;
 }
 
 .accusations-table {
-  margin: 20px 0;
+  margin: 30px 0;
   text-align: left;
+  width: 100%;
+  max-width: 600px;
 }
 
 .accusations-list {
-  background: #F5F5F5;
-  border: 2px solid #000;
-  padding: 8px;
-  margin-top: 8px;
-  min-height: 60px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 3px solid #FFF;
+  padding: 15px;
+  margin-top: 15px;
+  min-height: 100px;
+  max-height: 150px;
+  overflow-y: auto;
 }
 
 .accusation-item {
   font-family: 'Press Start 2P', monospace;
-  font-size: 6px;
-  margin: 4px 0;
-  padding: 4px;
-  background: #FFF;
-  border: 1px solid #000;
+  font-size: 8px;
+  margin: 8px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #FFF;
+  color: #FFF;
 }
 
 /* Voting Screen */
 .voting-timer {
-  margin: 16px 0;
-  background: #FFE0E0;
-  border: 2px solid #FF0000;
-  padding: 8px;
+  margin: 20px 0;
+  background: rgba(255, 0, 0, 0.2);
+  border: 3px solid #FF0000;
+  padding: 15px;
 }
 
 .voting-options {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin: 20px 0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin: 30px 0;
+  max-width: 600px;
 }
 
 .vote-btn {
   font-family: 'Press Start 2P', monospace;
-  font-size: 6px;
-  padding: 12px 8px;
-  border: 2px solid #000;
-  background: #FFF;
+  font-size: 8px;
+  padding: 15px 10px;
+  border: 3px solid #000;
+  background: rgba(255, 255, 255, 0.9);
+  color: #000;
   cursor: pointer;
-  box-shadow: 2px 2px 0px #000;
+  box-shadow: 3px 3px 0px #000;
   transition: all 0.1s ease;
   text-align: center;
 }
@@ -440,67 +467,72 @@ body {
 .vote-btn:hover {
   background: #F0F0F0;
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #000;
+  box-shadow: 2px 2px 0px #000;
 }
 
 .vote-btn.voted {
   background: #90EE90;
-  transform: translate(2px, 2px);
+  transform: translate(3px, 3px);
   box-shadow: 0px 0px 0px #000;
 }
 
 .vote-count {
-  margin-top: 4px;
+  margin-top: 6px;
   color: #666;
+  font-size: 6px;
 }
 
 .your-vote {
-  margin: 16px 0;
-  background: #E0FFE0;
-  border: 2px solid #00AA00;
-  padding: 8px;
+  margin: 25px 0;
+  background: rgba(0, 255, 0, 0.2);
+  border: 3px solid #00AA00;
+  padding: 15px;
 }
 
 /* Results Screen */
 .elimination-result {
-  margin: 20px 0;
-  background: #FFE0E0;
-  border: 2px solid #FF0000;
-  padding: 16px;
+  margin: 30px 0;
+  background: rgba(255, 0, 0, 0.2);
+  border: 3px solid #FF0000;
+  padding: 25px;
+  max-width: 500px;
 }
 
 .eliminated-player {
-  margin: 12px 0;
+  margin: 20px 0;
 }
 
 .role-reveal-result {
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  margin-top: 8px;
-  padding: 4px 8px;
-  border: 2px solid #000;
+  font-size: 10px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 3px solid #000;
   background: #FFD700;
+  color: #000;
 }
 
 .game-outcome {
-  margin: 20px 0;
-  background: #E0E0FF;
-  border: 2px solid #0000FF;
-  padding: 16px;
+  margin: 30px 0;
+  background: rgba(0, 0, 255, 0.2);
+  border: 3px solid #0000FF;
+  padding: 25px;
+  max-width: 500px;
 }
 
 .score-update {
-  margin: 16px 0;
-  background: #E0FFE0;
-  border: 2px solid #00AA00;
-  padding: 12px;
+  margin: 25px 0;
+  background: rgba(0, 255, 0, 0.2);
+  border: 3px solid #00AA00;
+  padding: 20px;
 }
 
 .results-actions {
-  margin: 20px 0;
+  margin: 30px 0;
   display: flex;
-  gap: 8px;
+  gap: 15px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* Toast Notifications */
@@ -514,15 +546,15 @@ body {
 .toast {
   background: #000;
   color: #FFF;
-  padding: 12px 16px;
-  border: 2px solid #FFF;
-  margin-bottom: 8px;
+  padding: 15px 20px;
+  border: 3px solid #FFF;
+  margin-bottom: 10px;
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  box-shadow: 3px 3px 0px #666;
+  font-size: 10px;
+  box-shadow: 4px 4px 0px #666;
   transform: translateX(400px);
   transition: transform 0.3s ease;
-  max-width: 250px;
+  max-width: 300px;
 }
 
 .toast.show {
@@ -539,53 +571,6 @@ body {
   border-color: #FFF;
 }
 
-/* Responsive Design */
-@media (max-width: 480px) {
-  #app {
-    margin: 5px;
-    max-width: 100%;
-  }
-  
-  .pixel-container {
-    width: 95%;
-    padding: 15px;
-  }
-  
-  .pixel-text.title {
-    font-size: 14px;
-  }
-  
-  .pixel-text.large {
-    font-size: 12px;
-  }
-  
-  .bonfire-scene {
-    height: 250px;
-  }
-  
-  .players-circle {
-    width: 220px;
-    height: 220px;
-  }
-  
-  .player-spot {
-    width: 50px;
-    height: 70px;
-  }
-  
-  .player-avatar {
-    font-size: 16px;
-  }
-  
-  .voting-options {
-    grid-template-columns: 1fr;
-  }
-  
-  .results-actions {
-    flex-direction: column;
-  }
-}
-
 /* Utility classes */
 .hidden {
   display: none !important;
@@ -600,13 +585,13 @@ body {
 }
 
 .mb-small {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .mb-medium {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .mb-large {
-  margin-bottom: 24px;
+  margin-bottom: 30px;
 }
