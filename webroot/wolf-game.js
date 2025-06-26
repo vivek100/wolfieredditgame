@@ -24,6 +24,14 @@ const COMPUTER_PLAYERS = [
   { name: 'Eva', avatar: '👩‍🦱', id: 'eva' },
 ];
 
+// Point system constants
+const POINTS = {
+  SURVIVAL: 5,        // Points for surviving a round
+  SHEEP_WIN: 15,      // Points for sheep winning (wolf eliminated)
+  WOLF_WIN: 25,       // Points for wolf winning (survive to end)
+  PARTICIPATION: 2,   // Base participation points
+};
+
 // Clue templates for computer players
 const CLUE_TEMPLATES = {
   Apple: ['red', 'fruit', 'sweet', 'tree', 'healthy', 'crunchy', 'juice', 'snack'],
@@ -51,18 +59,23 @@ const CLUE_TEMPLATES = {
 class WolfGameApp {
   constructor() {
     this.currentUser = null;
-    this.gameState = 'loading'; // loading, role, clues, bonfire, accusations, voting, results
+    this.gameState = 'loading'; // loading, role, clues, bonfire, accusations, voting, results, gameOver
     this.roundNumber = 1;
     this.userRole = null; // 'sheep' or 'wolf'
     this.userWord = null;
     this.userClues = [];
     this.computerPlayers = [];
+    this.alivePlayers = []; // Track who's still alive
     this.accusations = [];
     this.votes = {};
     this.selectedAccusation = null;
     this.votingTimer = null;
-    this.scores = {}; // userId -> score
+    this.totalScore = 0;
+    this.roundScore = 0;
     this.currentWordPair = null;
+    this.gameOver = false;
+    this.userEliminated = false;
+    this.gameWinner = null; // 'sheep', 'wolf', or null
     
     // Initialize DOM elements
     this.initializeElements();
@@ -195,11 +208,6 @@ class WolfGameApp {
   handleInitialData({ username, userId }) {
     this.currentUser = { username, userId };
     
-    // Initialize user score if not exists
-    if (!this.scores[userId]) {
-      this.scores[userId] = { username, score: 0 };
-    }
-    
     // Update user name display
     if (this.elements.userName) {
       this.elements.userName.textContent = username || 'You';
@@ -207,6 +215,13 @@ class WolfGameApp {
   }
   
   startGame() {
+    // Reset game state for new game
+    this.gameOver = false;
+    this.userEliminated = false;
+    this.gameWinner = null;
+    this.roundNumber = 1;
+    this.totalScore = 0;
+    
     // Hide loading, assign role and word
     this.assignRoleAndWord();
     this.createComputerPlayers();
@@ -224,8 +239,9 @@ class WolfGameApp {
   
   createComputerPlayers() {
     this.computerPlayers = [];
+    this.alivePlayers = ['user']; // User starts alive
     
-    // Ensure exactly one wolf in the game
+    // Ensure exactly one wolf in the game (if user is sheep)
     const wolfIndex = this.userRole === 'sheep' ? Math.floor(Math.random() * 5) : -1;
     
     COMPUTER_PLAYERS.forEach((player, index) => {
@@ -236,9 +252,11 @@ class WolfGameApp {
         word: isWolf ? this.currentWordPair.wolf : this.currentWordPair.sheep,
         clues: [],
         vote: null,
+        alive: true,
       };
       
       this.computerPlayers.push(computerPlayer);
+      this.alivePlayers.push(player.id);
     });
   }
   
@@ -300,6 +318,8 @@ class WolfGameApp {
   
   generateComputerClues() {
     this.computerPlayers.forEach(player => {
+      if (!player.alive) return; // Skip eliminated players
+      
       const templates = CLUE_TEMPLATES[player.word] || ['thing', 'item', 'object'];
       
       if (player.isWolf) {
@@ -323,16 +343,22 @@ class WolfGameApp {
     this.elements.userClue2.textContent = this.userClues[1];
     this.elements.userClue3.textContent = this.userClues[2];
     
-    // Update computer player clues
+    // Update computer player clues and hide eliminated players
     this.computerPlayers.forEach(player => {
       const playerSpot = document.querySelector(`[data-player="${player.id}"]`);
       if (playerSpot) {
-        const clueElements = playerSpot.querySelectorAll('.clue-bubble');
-        clueElements.forEach((element, index) => {
-          if (player.clues[index]) {
-            element.textContent = player.clues[index];
-          }
-        });
+        if (!player.alive) {
+          // Hide eliminated players
+          playerSpot.style.display = 'none';
+        } else {
+          playerSpot.style.display = 'block';
+          const clueElements = playerSpot.querySelectorAll('.clue-bubble');
+          clueElements.forEach((element, index) => {
+            if (player.clues[index]) {
+              element.textContent = player.clues[index];
+            }
+          });
+        }
       }
     });
   }
@@ -346,10 +372,25 @@ class WolfGameApp {
     this.selectedAccusation = null;
     this.elements.accusationInput.classList.add('hidden');
     this.elements.btnContinueToVoting.classList.add('hidden');
+    
+    // Hide eliminated players from accusation options
+    document.querySelectorAll('.player-btn').forEach(btn => {
+      const playerId = btn.dataset.player;
+      const player = this.computerPlayers.find(p => p.id === playerId);
+      if (player && !player.alive) {
+        btn.style.display = 'none';
+      } else {
+        btn.style.display = 'block';
+      }
+    });
+    
     this.updateAccusationsList();
   }
   
   selectPlayerForAccusation(playerId) {
+    const player = this.computerPlayers.find(p => p.id === playerId);
+    if (!player || !player.alive) return; // Can't accuse eliminated players
+    
     this.selectedAccusation = playerId;
     
     // Update UI
@@ -379,7 +420,7 @@ class WolfGameApp {
       reason: reason
     });
     
-    // Generate computer accusations
+    // Generate computer accusations (only from alive players)
     this.generateComputerAccusations();
     
     // Update display
@@ -402,17 +443,25 @@ class WolfGameApp {
       'gut feeling'
     ];
     
-    this.computerPlayers.forEach(accuser => {
-      // Each computer player accuses someone randomly
-      const targets = this.computerPlayers.filter(p => p.id !== accuser.id);
-      const target = targets[Math.floor(Math.random() * targets.length)];
-      const reason = reasons[Math.floor(Math.random() * reasons.length)];
+    const alivePlayers = this.computerPlayers.filter(p => p.alive);
+    
+    alivePlayers.forEach(accuser => {
+      // Each alive computer player accuses someone randomly (including user)
+      const targets = [...alivePlayers.filter(p => p.id !== accuser.id)];
+      if (this.alivePlayers.includes('user')) {
+        targets.push({ name: this.currentUser?.username || 'You' });
+      }
       
-      this.accusations.push({
-        accuser: accuser.name,
-        accused: target.name,
-        reason: reason
-      });
+      if (targets.length > 0) {
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        const reason = reasons[Math.floor(Math.random() * reasons.length)];
+        
+        this.accusations.push({
+          accuser: accuser.name,
+          accused: target.name,
+          reason: reason
+        });
+      }
     });
   }
   
@@ -434,6 +483,17 @@ class WolfGameApp {
     // Reset votes
     this.votes = {};
     this.elements.yourVote.classList.add('hidden');
+    
+    // Hide eliminated players from voting options
+    document.querySelectorAll('.vote-btn').forEach(btn => {
+      const playerId = btn.dataset.player;
+      const player = this.computerPlayers.find(p => p.id === playerId);
+      if (player && !player.alive) {
+        btn.style.display = 'none';
+      } else {
+        btn.style.display = 'block';
+      }
+    });
     
     // Start voting timer
     this.startVotingTimer(30);
@@ -458,6 +518,9 @@ class WolfGameApp {
   }
   
   submitVote(playerId) {
+    const player = this.computerPlayers.find(p => p.id === playerId);
+    if (!player || !player.alive) return; // Can't vote for eliminated players
+    
     if (this.votes.user) return; // Already voted
     
     this.votes.user = playerId;
@@ -474,18 +537,23 @@ class WolfGameApp {
     this.elements.yourVote.classList.remove('hidden');
     
     // Check if all votes are in
-    if (Object.keys(this.votes).length >= 6) { // User + 5 computers
+    const aliveCount = this.computerPlayers.filter(p => p.alive).length + (this.alivePlayers.includes('user') ? 1 : 0);
+    if (Object.keys(this.votes).length >= aliveCount) {
       clearInterval(this.votingTimer);
       this.processVotingResults();
     }
   }
   
   generateComputerVotes() {
-    this.computerPlayers.forEach(voter => {
-      // Computer players vote randomly (could be made smarter)
-      const targets = this.computerPlayers.filter(p => p.id !== voter.id);
-      const target = targets[Math.floor(Math.random() * targets.length)];
-      this.votes[voter.id] = target.id;
+    const alivePlayers = this.computerPlayers.filter(p => p.alive);
+    
+    alivePlayers.forEach(voter => {
+      // Computer players vote randomly among alive players (including user)
+      const targets = alivePlayers.filter(p => p.id !== voter.id);
+      if (targets.length > 0) {
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        this.votes[voter.id] = target.id;
+      }
     });
     
     // Update vote counts display
@@ -500,6 +568,7 @@ class WolfGameApp {
     
     // Update display
     this.computerPlayers.forEach(player => {
+      if (!player.alive) return;
       const voteElement = document.getElementById(`votes-${player.id}`);
       if (voteElement) {
         const count = voteCounts[player.id] || 0;
@@ -520,6 +589,13 @@ class WolfGameApp {
       voteCounts[a] > voteCounts[b] ? a : b
     );
     
+    // Eliminate the player
+    const eliminatedPlayer = this.computerPlayers.find(p => p.id === eliminatedId);
+    if (eliminatedPlayer) {
+      eliminatedPlayer.alive = false;
+      this.alivePlayers = this.alivePlayers.filter(id => id !== eliminatedId);
+    }
+    
     this.showResultsScreen(eliminatedId);
   }
   
@@ -537,27 +613,44 @@ class WolfGameApp {
     this.elements.eliminatedRole.textContent = wasWolf ? 'Was the WOLF' : 'Was a SHEEP';
     this.elements.eliminatedRole.style.background = wasWolf ? '#FF4444' : '#44FF44';
     
-    // Determine game outcome
-    let userWon = false;
+    // Calculate points and determine game state
+    this.roundScore = POINTS.PARTICIPATION; // Base participation points
     let outcomeText = '';
     let outcomeDescription = '';
-    let points = 2; // Base participation points
+    let showNextRound = false;
     
+    // Check win conditions
     if (wasWolf) {
       // Wolf was eliminated - Sheep win
+      this.gameWinner = 'sheep';
+      this.gameOver = true;
       outcomeText = '🎉 Sheep Win!';
-      outcomeDescription = 'The wolf has been caught!';
+      outcomeDescription = 'The wolf has been caught! Game Over.';
+      
       if (this.userRole === 'sheep') {
-        userWon = true;
-        points += 10;
+        this.roundScore += POINTS.SHEEP_WIN;
       }
     } else {
-      // Innocent was eliminated - Wolf wins
-      outcomeText = '🐺 Wolf Wins!';
-      outcomeDescription = 'An innocent was eliminated. The wolf remains hidden!';
-      if (this.userRole === 'wolf') {
-        userWon = true;
-        points += 15;
+      // Innocent was eliminated
+      const aliveWolves = this.computerPlayers.filter(p => p.alive && p.isWolf).length + (this.userRole === 'wolf' && this.alivePlayers.includes('user') ? 1 : 0);
+      const aliveSheep = this.computerPlayers.filter(p => p.alive && !p.isWolf).length + (this.userRole === 'sheep' && this.alivePlayers.includes('user') ? 1 : 0);
+      
+      if (aliveWolves >= aliveSheep || this.alivePlayers.length <= 2) {
+        // Wolf wins - either equal numbers or only 2 players left
+        this.gameWinner = 'wolf';
+        this.gameOver = true;
+        outcomeText = '🐺 Wolf Wins!';
+        outcomeDescription = 'The wolf has survived! Game Over.';
+        
+        if (this.userRole === 'wolf') {
+          this.roundScore += POINTS.WOLF_WIN;
+        }
+      } else {
+        // Game continues
+        outcomeText = '💀 Round Over';
+        outcomeDescription = 'An innocent was eliminated. The hunt continues...';
+        showNextRound = true;
+        this.roundScore += POINTS.SURVIVAL; // Survival bonus
       }
     }
     
@@ -566,38 +659,82 @@ class WolfGameApp {
     this.elements.outcomeDescription.textContent = outcomeDescription;
     
     // Update score
-    this.scores[this.currentUser?.userId].score += points;
-    this.elements.userScore.textContent = `+${points} points`;
+    this.totalScore += this.roundScore;
+    this.elements.userScore.textContent = `+${this.roundScore} points (Total: ${this.totalScore})`;
+    
+    // Show appropriate buttons
+    if (this.gameOver || this.userEliminated) {
+      this.elements.btnNextRound.style.display = 'none';
+      this.elements.btnNewGame.style.display = 'inline-block';
+      this.elements.btnNewGame.textContent = 'NEW GAME';
+    } else if (showNextRound) {
+      this.elements.btnNextRound.style.display = 'inline-block';
+      this.elements.btnNewGame.style.display = 'inline-block';
+      this.elements.btnNewGame.textContent = 'NEW GAME';
+    }
     
     // Send score update to Devvit
     this.postToDevvit({ 
       type: 'updateScore', 
       data: { 
-        score: points,
+        score: this.roundScore,
         userId: this.currentUser?.userId 
       }
     });
   }
   
   nextRound() {
+    if (this.gameOver || this.userEliminated) {
+      this.newGame();
+      return;
+    }
+    
     this.roundNumber++;
-    this.resetGame();
-    this.startGame();
+    this.resetRound();
+    
+    // Reassign roles and words for surviving players
+    this.assignRoleAndWord();
+    
+    // Reset computer players (keep alive status)
+    this.computerPlayers.forEach(player => {
+      if (player.alive) {
+        // Reassign role (maintain balance)
+        const aliveCount = this.computerPlayers.filter(p => p.alive).length + 1; // +1 for user
+        const needWolf = !this.computerPlayers.some(p => p.alive && p.isWolf) && this.userRole !== 'wolf';
+        
+        if (needWolf && Math.random() < 0.3) {
+          player.isWolf = true;
+          player.word = this.currentWordPair.wolf;
+        } else {
+          player.isWolf = false;
+          player.word = this.currentWordPair.sheep;
+        }
+        
+        player.clues = [];
+        player.vote = null;
+      }
+    });
+    
+    this.showRoleScreen();
   }
   
   newGame() {
     this.roundNumber = 1;
-    this.scores[this.currentUser?.userId].score = 0;
-    this.resetGame();
+    this.totalScore = 0;
+    this.gameOver = false;
+    this.userEliminated = false;
+    this.gameWinner = null;
+    this.resetRound();
     this.startGame();
   }
   
-  resetGame() {
-    // Reset game state
+  resetRound() {
+    // Reset round state
     this.userClues = [];
     this.accusations = [];
     this.votes = {};
     this.selectedAccusation = null;
+    this.roundScore = 0;
     
     if (this.votingTimer) {
       clearInterval(this.votingTimer);
@@ -617,12 +754,23 @@ class WolfGameApp {
     this.elements.btnContinueToVoting.classList.add('hidden');
     this.elements.yourVote.classList.add('hidden');
     
+    // Reset button visibility
+    this.elements.btnNextRound.style.display = 'inline-block';
+    this.elements.btnNewGame.style.display = 'inline-block';
+    
     // Clear selections
     document.querySelectorAll('.player-btn').forEach(btn => {
       btn.classList.remove('selected');
+      btn.style.display = 'block';
     });
     document.querySelectorAll('.vote-btn').forEach(btn => {
       btn.classList.remove('voted');
+      btn.style.display = 'block';
+    });
+    
+    // Show all player spots
+    document.querySelectorAll('.player-spot').forEach(spot => {
+      spot.style.display = 'block';
     });
   }
   
